@@ -15,7 +15,7 @@ export default function HeroSection() {
             {/* Eyebrow Badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-[#7EB8B9]/40 bg-[#EAF4F4] px-4 py-1.5 text-xs font-semibold text-[#0F4E4F] shadow-sm mb-6">
               <span className="flex h-2 w-2 rounded-full bg-[#1F7A7B] animate-pulse" />
-              <span>✨ المنصة الأبسط للمعلمين لإنشاء مساحتهم التعليمية</span>
+              <span>✨ المنصة الأبسط للمعلمين في مصر لإنشاء مساحتهم التعليمية</span>
             </div>
 
             {/* Main Headline H1 */}

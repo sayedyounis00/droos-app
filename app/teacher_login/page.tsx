@@ -49,7 +49,7 @@ export default function TeacherLoginPage() {
       <div className="pointer-events-none absolute -top-24 right-1/2 h-96 w-96 translate-x-1/2 rounded-full bg-[#1F7A7B]/10 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-0 h-80 w-80 rounded-full bg-[#E8A83C]/10 blur-3xl" />
 
-      {/* Top Bar Navigation */}
+      {/* Top Bar Header */}
       <header className="w-full border-b border-[#EEF0F2] bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           
@@ -62,19 +62,8 @@ export default function TeacherLoginPage() {
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-bold tracking-tight text-[#1C2126]">دُرُوس</span>
-              <span className="text-[10px] font-medium text-[#1F7A7B]">منصة المعلمين</span>
+              <span className="text-[10px] font-medium text-[#1F7A7B]">منصة المعلمين في مصر</span>
             </div>
-          </Link>
-
-          {/* Back to Landing Page Link */}
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-[#4A5158] transition-colors hover:text-[#1F7A7B]"
-          >
-            <span>العودة للرئيسية</span>
-            <svg className="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
           </Link>
 
         </div>
@@ -125,27 +114,22 @@ export default function TeacherLoginPage() {
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
               
-              {/* Phone Field */}
+              {/* Phone Field (Without flag, Egyptian format) */}
               <div>
                 <label htmlFor="phone" className="block text-xs font-bold text-[#1C2126] mb-2">
                   رقم الهاتف
                 </label>
-                <div className="relative flex items-center">
-                  <span className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-sm font-semibold text-[#8A929B] border-l border-[#EEF0F2] pl-3">
-                    🇸🇦 +966
-                  </span>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="05x xxx xxxx"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                    className="w-full rounded-2xl border border-[#D3D7DC] bg-[#F7F8F9] py-3.5 pr-28 pl-4 text-sm font-medium text-[#1C2126] outline-none transition-all focus:border-[#1F7A7B] focus:bg-white focus:ring-2 focus:ring-[#1F7A7B]/20"
-                  />
-                </div>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="01xxxxxxxxx"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  className="w-full rounded-2xl border border-[#D3D7DC] bg-[#F7F8F9] py-3.5 px-4 text-sm font-medium text-[#1C2126] outline-none transition-all focus:border-[#1F7A7B] focus:bg-white focus:ring-2 focus:ring-[#1F7A7B]/20"
+                />
               </div>
 
               {/* Password Field */}
