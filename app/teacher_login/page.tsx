@@ -30,13 +30,33 @@ export default function TeacherLoginPage() {
     setIsLoading(true);
 
     try {
-      // Simulation of teacher login auth call
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      
+      const res = await fetch("/api/auth/teacher-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ phone, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setErrorMessage(data.error || "حدث خطأ أثناء تسجيل الدخول. يرجى التأكد من البيانات.");
+        return;
+      }
+
       setSuccessMessage("تم تسجيل الدخول بنجاح! جاري التوجيه إلى لوحة التحكم...");
-      // In production, redirect to teacher dashboard here
+      
+      // Store session in localStorage for fast UI hydration
+      if (typeof window !== "undefined" && data.teacher) {
+        localStorage.setItem("droos_teacher", JSON.stringify(data.teacher));
+      }
+
+      setTimeout(() => {
+        window.location.href = data.redirectTo || "/teacher/dashboard";
+      }, 600);
     } catch {
-      setErrorMessage("حدث خطأ أثناء تسجيل الدخول. يرجى التأكد من البيانات والمحاولة مجدداً.");
+      setErrorMessage("حدث خطأ في الاتصال بالخادم. يرجى التأكد من الاتصال بالمواصفات والمحاولة مجدداً.");
     } finally {
       setIsLoading(false);
     }
