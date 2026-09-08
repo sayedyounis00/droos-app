@@ -1,26 +1,76 @@
 @import "tailwindcss";
 
+@theme {
+  --font-arabic: var(--font-tajawal), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  --font-sans: var(--font-tajawal), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+  --color-primary-50: #EAF4F4;
+  --color-primary-100: #CFE6E6;
+  --color-primary-300: #7EB8B9;
+  --color-primary-500: #1F7A7B;
+  --color-primary-600: #166465;
+  --color-primary-700: #0F4E4F;
+  --color-primary-900: #0A3536;
+
+  --color-accent-50: #FDF3E3;
+  --color-accent-300: #F3C97C;
+  --color-accent-500: #E8A83C;
+  --color-accent-600: #C88A22;
+  --color-accent-700: #9C6B18;
+
+  --color-neutral-0: #FFFFFF;
+  --color-neutral-50: #F7F8F9;
+  --color-neutral-100: #EEF0F2;
+  --color-neutral-300: #D3D7DC;
+  --color-neutral-500: #8A929B;
+  --color-neutral-700: #4A5158;
+  --color-neutral-900: #1C2126;
+
+  --color-student: #3A8DDE;
+  --color-teacher: #1F7A7B;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-primary: #1F7A7B;
+  --color-accent: #E8A83C;
+  --color-bg: #F7F8F9;
+  --color-surface: #FFFFFF;
+  --color-text-primary: #1C2126;
+  --color-text-secondary: #4A5158;
+  --color-border: #D3D7DC;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+[data-theme="dark"] {
+  --color-primary: #3FA3A4;
+  --color-accent: #F0BB63;
+  --color-bg: #12171B;
+  --color-surface: #1B2227;
+  --color-text-primary: #EDEFF1;
+  --color-text-secondary: #A7AEB5;
+  --color-border: #2C353C;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  direction: rtl;
+  text-align: start;
+  font-family: var(--font-arabic);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
+}
+
+/* Custom Smooth Transitions */
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-hero-entrance {
+  animation: fadeInSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
