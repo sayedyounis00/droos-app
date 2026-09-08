@@ -43,7 +43,7 @@ export default function Footer() {
 
           {/* Col 3: Support & Legal */}
           <div>
-            <h4 className="text-sm font-bold text-white mb-4">الدعم والخصوصية</h4>
+            <h4 className="text-sm font-bold text-white mb-4">الدعم والتواصل</h4>
             <ul className="space-y-2.5 text-sm">
               <li>
                 <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-[#7EB8B9]">تواصل معنا عبر واتساب</a>
@@ -57,23 +57,17 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Col 4: Roles */}
+          {/* Col 4: Teacher CTA */}
           <div>
-            <h4 className="text-sm font-bold text-white mb-4">الدخول للمنصة</h4>
+            <h4 className="text-sm font-bold text-white mb-4">انضم لمنصة المعلمين</h4>
             <div className="flex flex-col gap-2.5">
               <a
                 href="https://wa.me/?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%D9%8B%D8%8C%20%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%A5%D9%86%D8%B4%D8%A7%D8%A1%20%D8%AD%D8%B3%D8%A7%D8%A8%20%D9%83%D9%85%D8%B9%D9%84%D9%85%20%D8%B9%D9%84%D9%89%20%D9%85%D9%86%D8%B5%D8%A9%20%D8%AF%D8%B1%D9%88%D8%B3"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-xl bg-[#E8A83C] px-4 py-2.5 text-center text-xs font-bold text-white hover:bg-[#C88A22]"
+                className="rounded-xl bg-[#E8A83C] px-4 py-3 text-center text-xs font-bold text-white hover:bg-[#C88A22]"
               >
-                تسجيل جديد كمعلم
-              </a>
-              <a
-                href="#student-login"
-                className="rounded-xl border border-[#3A8DDE] px-4 py-2.5 text-center text-xs font-bold text-[#3A8DDE] hover:bg-[#3A8DDE]/10"
-              >
-                تسجيل دخول طالب
+                تسجيل جديد كمعلم الآن
               </a>
             </div>
           </div>
@@ -82,7 +76,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="mt-12 pt-6 border-t border-[#4A5158]/40 text-center text-xs text-[#8A929B]">
-          © {new Date().getFullYear()} [دروس]. جميع الحقوق محفوظة.
+          © {new Date().getFullYear()} دروس (Droos App). جميع الحقوق محفوظة.
         </div>
 
       </div>

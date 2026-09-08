@@ -16,7 +16,7 @@ export default function HowItWorks() {
       step: "03",
       icon: "🚀",
       title: "أنشئ منصتك وابدأ التدريس",
-      desc: "أضف دروسك وموادك التعليمية، واستقبل طلابك فوراً بكل سهولة.",
+      desc: "أضف دروسك وموادك التعليمية، واستقبل طلابك بكل سهولة وسلاسة.",
     },
   ];
 
@@ -27,13 +27,13 @@ export default function HowItWorks() {
         {/* Section Header */}
         <div className="mx-auto max-w-2xl text-center">
           <span className="inline-block rounded-lg bg-[#FDF3E3] px-3.5 py-1 text-xs font-bold text-[#9C6B18]">
-            طريقة العمل
+            رحلة المعلم
           </span>
           <h2 className="mt-4 text-3xl font-extrabold text-[#1C2126] sm:text-4xl">
-            ابدأ في 3 خطوات بسيطة
+            ابدأ كمعلم في 3 خطوات بسيطة
           </h2>
           <p className="mt-3 text-base text-[#4A5158]">
-            صممنا العملية لتكون أسرع وأبسط تجربة إعداد معلم في الوطن العربي.
+            صممنا العملية لتكون أسرع وأبسط تجربة إعداد منصة معلم في الوطن العربي.
           </p>
         </div>
 
@@ -58,7 +58,7 @@ export default function HowItWorks() {
               </p>
 
               <div className="mt-6 flex items-center gap-1 text-xs font-bold text-[#1F7A7B]">
-                <span>خطوة سهلة وآمنة</span>
+                <span>تفعيل سلس وآمن</span>
                 <svg className="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -75,7 +75,7 @@ export default function HowItWorks() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-base font-bold text-[#1F7A7B] hover:underline"
           >
-            <span>هل لديك سؤال حول خطوات التفعيل؟ تواصل معنا فوراً</span>
+            <span>جاهز للبدء كمعلم؟ تواصل معنا فوراً في واتساب</span>
             <svg className="h-5 w-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>

@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export default function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#EAF4F4]/50 via-[#F7F8F9] to-[#F7F8F9] pt-12 pb-20 md:pt-20 md:pb-28">
@@ -17,18 +15,18 @@ export default function HeroSection() {
             {/* Eyebrow Badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-[#7EB8B9]/40 bg-[#EAF4F4] px-4 py-1.5 text-xs font-semibold text-[#0F4E4F] shadow-sm mb-6">
               <span className="flex h-2 w-2 rounded-full bg-[#1F7A7B] animate-pulse" />
-              <span>✨ المنصة الأبسط للمعلمين والطلاب في الوطن العربي</span>
+              <span>✨ المنصة الأبسط للمعلمين لإنشاء مساحتهم التعليمية</span>
             </div>
 
             {/* Main Headline H1 */}
             <h1 className="text-3xl font-extrabold tracking-tight text-[#1C2126] sm:text-4xl md:text-5xl md:leading-[1.2]">
-              منصتك التعليمية..  
-              <span className="block mt-2 text-[#1F7A7B]">من التسجيل إلى النجاح في دقائق</span>
+              أنشئ منصتك التعليمية الخاصة..  
+              <span className="block mt-2 text-[#1F7A7B]">في دقائق معدودة دون تعقيد</span>
             </h1>
 
             {/* Subheading */}
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#4A5158] sm:text-lg">
-              منصة متكاملة تتيح للمعلمين إنشاء منصتهم التعليمية الخاصة بسهولة، وإدارة الطلاب والمحتوى من مكان واحد دون الحاجة لأي خبرة تقنية.
+              منصة متكاملة مصممة خصيصاً لتتيح لك كمعلم تنظيم موادك التعليمية، وإدارة الطلاب والمحتوى من مكان واحد دون الحاجة لأي خبرة تقنية.
             </p>
 
             {/* CTAs Group */}
@@ -39,7 +37,7 @@ export default function HeroSection() {
                 href="https://wa.me/?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%D9%8B%D8%8C%20%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%A5%D9%86%D8%B4%D8%A7%D8%A1%20%D8%AD%D8%B3%D8%A7%D8%A8%20%D9%83%D9%85%D8%B9%D9%84%D9%85%20%D8%B9%D9%84%D9%89%20%D9%85%D9%86%D8%B5%D8%A9%20%D8%AF%D8%B1%D9%88%D8%B3"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-[#E8A83C] px-7 py-4 text-base font-bold text-white shadow-lg shadow-[#E8A83C]/25 transition-all hover:bg-[#C88A22] hover:shadow-xl active:scale-[0.98]"
+                className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-[#E8A83C] px-8 py-4 text-base font-bold text-white shadow-lg shadow-[#E8A83C]/25 transition-all hover:bg-[#C88A22] hover:shadow-xl active:scale-[0.98]"
               >
                 <span>ابدأ الآن مجاناً — سجّل كمعلم</span>
                 <svg className="h-5 w-5 rotate-180 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -47,13 +45,13 @@ export default function HeroSection() {
                 </svg>
               </a>
 
-              {/* Student Secondary CTA */}
-              <Link
-                href="#student-login"
+              {/* Secondary Information Action */}
+              <a
+                href="#how-it-works"
                 className="inline-flex items-center justify-center rounded-2xl border border-[#D3D7DC] bg-white px-6 py-4 text-base font-medium text-[#0F4E4F] shadow-xs transition-all hover:border-[#1F7A7B] hover:bg-[#EAF4F4]/50"
               >
-                هل أنت طالب؟ سجّل دخولك
-              </Link>
+                تعرّف على طريقة العمل
+              </a>
             </div>
 
             {/* Trust Micro-Note */}
@@ -61,16 +59,16 @@ export default function HeroSection() {
               <svg className="h-4 w-4 text-[#2E9E5B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>التسجيل كمعلم يتم عبر واتساب خلال دقائق معدودة بدعم مباشر.</span>
+              <span>التسجيل يتم عبر تواصل مباشر في واتساب خلال دقائق معدودة.</span>
             </div>
 
           </div>
 
-          {/* Left Column (Interactive Mockup Card Preview) */}
+          {/* Left Column (Teacher Dashboard Mockup Card Preview) */}
           <div className="relative lg:col-span-5">
             <div className="relative mx-auto max-w-md rounded-3xl border border-[#EEF0F2] bg-white p-6 shadow-2xl shadow-[#1F7A7B]/10 lg:max-w-none">
               
-              {/* Fake App Window Controls */}
+              {/* Window Controls */}
               <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-4">
                 <div className="flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-[#D9483D]/80" />
@@ -82,7 +80,7 @@ export default function HeroSection() {
                 </span>
               </div>
 
-              {/* Dashboard Content Mockup */}
+              {/* Teacher Dashboard Content Mockup */}
               <div className="mt-6 space-y-4">
                 
                 {/* Header Profile Snippet */}
@@ -105,7 +103,7 @@ export default function HeroSection() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-2xl border border-[#EEF0F2] bg-[#F7F8F9] p-3.5 text-center">
                     <span className="block text-2xl font-black text-[#1F7A7B]">142</span>
-                    <span className="text-xs font-medium text-[#4A5158]">طالب مسجّل</span>
+                    <span className="text-xs font-medium text-[#4A5158]">طالب مسجّل لديك</span>
                   </div>
                   <div className="rounded-2xl border border-[#EEF0F2] bg-[#F7F8F9] p-3.5 text-center">
                     <span className="block text-2xl font-black text-[#E8A83C]">18</span>
@@ -135,7 +133,7 @@ export default function HeroSection() {
                 <div className="flex items-center justify-between rounded-xl bg-[#0A3536] p-3 text-white">
                   <div className="flex items-center gap-2">
                     <span className="flex h-2 w-2 rounded-full bg-[#E8A83C]" />
-                    <span className="text-xs font-medium">تم انضمام طالب جديد قبل 3 دقائق</span>
+                    <span className="text-xs font-medium">تم انضمام طالب جديد لقاعتك قبل 3 دقائق</span>
                   </div>
                   <span className="text-[11px] font-bold text-[#F3C97C]">عرض</span>
                 </div>
