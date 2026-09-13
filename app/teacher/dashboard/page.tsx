@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TeacherUser } from "@/lib/auth/teacher-auth";
 import DroosTableManager from "@/components/teacher/DroosTableManager";
+import HomePageBuilder from "@/components/teacher/HomePageBuilder";
 
 export default function TeacherDashboardPage() {
   const [teacher, setTeacher] = useState<TeacherUser | null>(null);
-  const [activeTab, setActiveTab] = useState<"account" | "droos" | "students" | "settings">("account");
+  const [activeTab, setActiveTab] = useState<"account" | "droos" | "students" | "homepage">("account");
+  const [showBuilder, setShowBuilder] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -18,7 +20,7 @@ export default function TeacherDashboardPage() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [subject, setSubject] = useState("");
-  const [grades, setGrades] = useState("");
+  const [grades, setGrades] = useState<string[]>([]);
   const [governorate, setGovernorate] = useState("");
   const [bio, setBio] = useState("");
   const [subdomain, setSubdomain] = useState("");
@@ -44,7 +46,10 @@ export default function TeacherDashboardPage() {
         setPhone(initialData.phone || "");
         setPassword(initialData.password || "");
         setSubject(initialData.subject || "");
-        setGrades(initialData.grades || "");
+        const safeGrades = Array.isArray(initialData.grades) 
+          ? initialData.grades 
+          : (typeof initialData.grades === 'string' && initialData.grades ? [initialData.grades] : []);
+        setGrades(safeGrades);
         setGovernorate(initialData.governorate || "");
         setBio(initialData.bio || "");
         setSubdomain(initialData.subdomain || "");
@@ -116,6 +121,11 @@ export default function TeacherDashboardPage() {
       setIsSaving(false);
     }
   };
+
+  // Full-page builder view — replaces dashboard entirely
+  if (showBuilder) {
+    return <HomePageBuilder onBack={() => setShowBuilder(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F8F9] font-sans antialiased text-[#1C2126]">
@@ -217,27 +227,6 @@ export default function TeacherDashboardPage() {
           </div>
         </div>
 
-        {/* Success / Error Alerts */}
-        {toastMessage && (
-          <div className="mb-6 flex items-center justify-between rounded-2xl bg-[#2E9E5B] p-4 text-sm font-bold text-white shadow-lg shadow-[#2E9E5B]/20">
-            <div className="flex items-center gap-2">
-              <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>{toastMessage}</span>
-            </div>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="mb-6 flex items-center gap-2.5 rounded-2xl bg-[#D9483D]/10 p-4 text-sm font-bold text-[#D9483D]">
-            <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
         {/* Dashboard Tabs Navigation */}
         <div className="mb-8 border-b border-[#EEF0F2] flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           <button
@@ -265,8 +254,7 @@ export default function TeacherDashboardPage() {
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
-            <span>الدروس والحصص (Droos)</span>
-            <span className="rounded-full bg-[#EAF4F4] text-[#1F7A7B] text-[10px] px-2 py-0.5 font-bold">قريباً</span>
+            <span>الدروس والحصص</span>
           </button>
 
           <button
@@ -281,21 +269,16 @@ export default function TeacherDashboardPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
             <span>الطلاب والمجموعات</span>
-            <span className="rounded-full bg-[#FDF3E3] text-[#C88A22] text-[10px] px-2 py-0.5 font-bold">قريباً</span>
           </button>
 
           <button
-            onClick={() => setActiveTab("settings")}
-            className={`flex items-center gap-2 rounded-2xl py-3 px-5 text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === "settings"
-                ? "bg-[#1F7A7B] text-white shadow-md shadow-[#1F7A7B]/20"
-                : "bg-white text-[#4A5158] hover:bg-[#EEF0F2]"
-            }`}
+            onClick={() => setShowBuilder(true)}
+            className="flex items-center gap-2 rounded-2xl py-3 px-5 text-sm font-bold transition-all whitespace-nowrap bg-gradient-to-r from-[#E8A83C] to-[#C88A22] text-white shadow-md shadow-[#E8A83C]/30 hover:shadow-lg hover:shadow-[#E8A83C]/40 active:scale-[0.98]"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            <span>الإعدادات</span>
+            <span>منشئ الصفحة الرئيسية</span>
           </button>
         </div>
 
@@ -455,18 +438,25 @@ export default function TeacherDashboardPage() {
                   {/* Educational Stages / Grades Dropdown */}
                   <div>
                     <label className="block text-xs font-bold text-[#1C2126] mb-2">المراحل التعليمية</label>
-                    <select
-                      value={grades}
-                      onChange={(e) => setGrades(e.target.value)}
-                      className="w-full rounded-2xl border border-[#D3D7DC] bg-[#F7F8F9] py-3.5 px-4 text-sm font-medium text-[#1C2126] outline-none transition-all focus:border-[#1F7A7B] focus:bg-white focus:ring-2 focus:ring-[#1F7A7B]/20"
-                    >
-                      <option value="">-- اختر الصف / المرحلة التعليمية --</option>
-                      <optgroup label="المرحلة الثانوية">
-                        <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
-                        <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
-                        <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
-                      </optgroup>
-                    </select>
+                    <div className="flex flex-col gap-2 rounded-2xl border border-[#D3D7DC] bg-[#F7F8F9] p-4 text-sm font-medium text-[#1C2126]">
+                      {['الصف الأول الثانوي', 'الصف الثاني الثانوي', 'الصف الثالث الثانوي'].map((gradeOption) => (
+                        <label key={gradeOption} className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={grades.includes(gradeOption)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setGrades([...grades, gradeOption]);
+                              } else {
+                                setGrades(grades.filter((g) => g !== gradeOption));
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-[#D3D7DC] text-[#1F7A7B] focus:ring-[#1F7A7B]"
+                          />
+                          <span>{gradeOption}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
 
 
@@ -497,32 +487,56 @@ export default function TeacherDashboardPage() {
                 </div>
 
                 {/* Save Button */}
-                <div className="flex items-center justify-between pt-4 border-t border-[#EEF0F2]">
+                <div className="flex flex-col gap-3 pt-4 border-t border-[#EEF0F2] sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-xs font-medium text-[#8A929B]">
                     سيتم تحديث البيانات مباشرة في قاعدة البيانات.
                   </span>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="flex items-center gap-2 rounded-2xl bg-[#1F7A7B] py-3.5 px-7 text-sm font-bold text-white shadow-lg shadow-[#1F7A7B]/20 transition-all hover:bg-[#166465] active:scale-[0.98] disabled:opacity-50"
-                  >
-                    {isSaving ? (
-                      <>
-                        <svg className="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        <span>جاري التحديث...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {toastMessage && (
+                      <div
+                        role="status"
+                        className="flex max-w-xs items-center gap-2 rounded-xl bg-[#2E9E5B] px-3 py-2 text-xs font-bold text-white shadow-md shadow-[#2E9E5B]/20"
+                      >
+                        <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>حفظ التعديلات في قاعدة البيانات</span>
-                      </>
+                        <span>{toastMessage}</span>
+                      </div>
                     )}
-                  </button>
+                    {errorMessage && (
+                      <div
+                        role="alert"
+                        className="flex max-w-xs items-center gap-2 rounded-xl bg-[#D9483D]/10 px-3 py-2 text-xs font-bold text-[#D9483D]"
+                      >
+                        <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{errorMessage}</span>
+                      </div>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={isSaving}
+                      className="flex items-center gap-2 rounded-2xl bg-[#1F7A7B] py-3.5 px-7 text-sm font-bold text-white shadow-lg shadow-[#1F7A7B]/20 transition-all hover:bg-[#166465] active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {isSaving ? (
+                        <>
+                          <svg className="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          <span>جاري التحديث...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span>حفظ التعديلات في قاعدة البيانات</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
               </form>
@@ -551,9 +565,17 @@ export default function TeacherDashboardPage() {
                     <span className="text-[#8A929B]">المادة التخصصية:</span>
                     <span className="font-bold text-[#1F7A7B]">{teacher?.subject || subject}</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-[#F7F8F9]">
-                    <span className="text-[#8A929B]">المراحل التعليمية:</span>
-                    <span className="font-bold text-[#1C2126] text-right">{teacher?.grades || grades}</span>
+                  <div className="flex justify-between items-center py-3 border-b border-[#EEF0F2] last:border-0">
+                    <span className="text-[#8A929B]">المراحل:</span>
+                    <span className="font-bold text-[#1C2126] text-right">
+                      {Array.isArray(teacher?.grades) && teacher.grades.length > 0
+                        ? teacher.grades.join('، ')
+                        : typeof teacher?.grades === 'string'
+                        ? teacher.grades
+                        : Array.isArray(grades)
+                        ? grades.join('، ')
+                        : grades}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-[#F7F8F9]">
                     <span className="text-[#8A929B]">المحافظة:</span>
@@ -613,7 +635,7 @@ export default function TeacherDashboardPage() {
 
         {/* Tab 2: Droos Table Manager */}
         {activeTab === "droos" && (
-          <DroosTableManager />
+          <DroosTableManager teacherGrades={teacher?.grades || []} />
         )}
 
         {/* Tab 3: Students Placeholder */}
@@ -631,24 +653,11 @@ export default function TeacherDashboardPage() {
           </div>
         )}
 
-        {/* Tab 4: Settings Placeholder */}
-        {activeTab === "settings" && (
-          <div className="rounded-3xl border border-[#EEF0F2] bg-white p-8 text-right shadow-sm space-y-6">
-            <h3 className="text-lg font-bold text-[#1C2126] border-b border-[#EEF0F2] pb-3">إعدادات الحساب والأمان</h3>
-            <div className="space-y-4 max-w-xl text-sm">
-              <div className="flex items-center justify-between p-4 rounded-2xl bg-[#F7F8F9]">
-                <div>
-                  <span className="font-bold block text-[#1C2126]">إشعارات الطلاب</span>
-                  <span className="text-xs text-[#8A929B]">تلقي رسائل فورية عند انضمام طالب جديد</span>
-                </div>
-                <span className="text-xs font-bold text-[#2E9E5B]">مفعل</span>
-              </div>
-            </div>
-          </div>
-        )}
+
 
       </main>
 
     </div>
   );
 }
+
