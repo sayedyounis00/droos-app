@@ -104,7 +104,6 @@ export default function HomePageBuilder({
   const [previewMode, setPreviewMode] = useState(false);
   const [saved, setSaved] = useState(false);
   const [selectedThemeId, setSelectedThemeId] = useState<ThemeId>("horizon");
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
 
   const currentTheme = PLATFORM_THEMES[selectedThemeId] || PLATFORM_THEMES["horizon"];
@@ -112,12 +111,6 @@ export default function HomePageBuilder({
 
   const handleSelectTheme = (id: ThemeId) => {
     setSelectedThemeId(id);
-    const theme = PLATFORM_THEMES[id];
-    if (theme.isDarkDefault) {
-      setIsDarkMode(true);
-    } else {
-      setIsDarkMode(false);
-    }
   };
 
   const handleSave = () => {
@@ -245,19 +238,6 @@ export default function HomePageBuilder({
           {/* Right: Preview Actions & Mode Toggle */}
           <div className="flex items-center gap-2">
             
-            {/* Light / Dark Mode Toggle Button */}
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
-                isDarkMode
-                  ? "bg-[#1C2126] text-[#F3C97C] border-white/20"
-                  : "bg-white/10 hover:bg-white/20 text-white border-white/10"
-              }`}
-              title={isDarkMode ? "الوضع الليلي مفعّل" : "الوضع النهار مفعّل"}
-            >
-              <span>{isDarkMode ? "🌙 داكن" : "☀️ فاتح"}</span>
-            </button>
-
             {/* Preview Toggle */}
             <button
               onClick={() => setPreviewMode(!previewMode)}
@@ -308,7 +288,6 @@ export default function HomePageBuilder({
             data={data}
             teachingYears={displayGrades}
             theme={currentTheme}
-            isDarkMode={isDarkMode}
           />
         </div>
       ) : (
@@ -381,19 +360,12 @@ export default function HomePageBuilder({
                   {currentTheme.nameAr}
                 </span>
               </div>
-              <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="text-[11px] font-bold text-[#4A5158] hover:text-[#1F7A7B]"
-              >
-                {isDarkMode ? "🌙 ليلي" : "☀️ نهاري"}
-              </button>
             </div>
             <div className="transform scale-[0.46] origin-top-right w-[217%] pointer-events-none overflow-hidden shadow-inner">
               <PreviewPage
                 data={data}
                 teachingYears={displayGrades}
                 theme={currentTheme}
-                isDarkMode={isDarkMode}
               />
             </div>
           </aside>
@@ -534,14 +506,12 @@ function PreviewPage({
   data,
   teachingYears,
   theme,
-  isDarkMode,
 }: {
   data: HomePageData;
   teachingYears: string[];
   theme: PlatformTheme;
-  isDarkMode: boolean;
 }) {
-  const colors = isDarkMode ? theme.dark : theme.light;
+  const colors = theme.light;
 
   return (
     <div

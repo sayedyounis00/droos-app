@@ -40,15 +40,6 @@
   --color-border: #D3D7DC;
 }
 
-[data-theme="dark"] {
-  --color-primary: #3FA3A4;
-  --color-accent: #F0BB63;
-  --color-bg: #12171B;
-  --color-surface: #1B2227;
-  --color-text-primary: #EDEFF1;
-  --color-text-secondary: #A7AEB5;
-  --color-border: #2C353C;
-}
 
 body {
   direction: rtl;
