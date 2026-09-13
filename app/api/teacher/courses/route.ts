@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { CourseItem } from '@/lib/droos-data';
+import { CourseItem, EGYPTIAN_GRADE_LEVELS } from '@/lib/droos-data';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const gradeLevelId = searchParams.get('gradeLevelId');
+    const rawGradeLevelIds = searchParams.get('gradeLevelIds') || searchParams.get('gradeLevelId');
     const teacherId = searchParams.get('teacherId');
 
     let query = supabase
@@ -32,14 +32,24 @@ export async function GET(request: NextRequest) {
             title,
             content_type,
             video_url,
+            description,
             created_at
           )
         )
       `)
       .order('created_at', { ascending: false });
 
-    if (gradeLevelId && gradeLevelId !== 'all') {
-      query = query.eq('grade_level_id', gradeLevelId);
+    if (rawGradeLevelIds && rawGradeLevelIds !== 'all') {
+      const ids = rawGradeLevelIds
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean);
+
+      if (ids.length === 1) {
+        query = query.eq('grade_level_id', ids[0]);
+      } else if (ids.length > 1) {
+        query = query.in('grade_level_id', ids);
+      }
     }
 
     if (teacherId) {
@@ -73,26 +83,24 @@ export async function POST(request: NextRequest) {
     }
 
     let validTeacherId = teacher_id;
-    if (!validTeacherId || validTeacherId === 'tchr-ahmed-saad-01') {
-      const { data: dbTeacher } = await supabase.from('teachers').select('id').eq('phone', '01143825523').single();
-      if (dbTeacher) {
-        validTeacherId = dbTeacher.id;
-      }
-    }
-
     let validGradeLevelId = grade_level_id;
-    // Check if the provided grade_level_id is a static ID (e.g. 'grd-sec-3')
-    const { EGYPTIAN_GRADE_LEVELS } = await import('@/lib/droos-data');
+
+    // Parallelize DB lookups for teacher & static grade resolution if needed
+    const needTeacherLookup = !validTeacherId || validTeacherId === 'tchr-ahmed-saad-01';
     const staticGrade = EGYPTIAN_GRADE_LEVELS.find((g) => g.id === grade_level_id);
-    if (staticGrade) {
-      const { data: dbGrade } = await supabase
-        .from('grade_levels')
-        .select('id')
-        .eq('name_ar', staticGrade.name_ar)
-        .single();
-      if (dbGrade) {
-        validGradeLevelId = dbGrade.id;
-      }
+
+    if (needTeacherLookup || staticGrade) {
+      const [teacherRes, gradeRes] = await Promise.all([
+        needTeacherLookup
+          ? supabase.from('teachers').select('id').eq('phone', '01143825523').maybeSingle()
+          : Promise.resolve({ data: null }),
+        staticGrade
+          ? supabase.from('grade_levels').select('id').eq('name_ar', staticGrade.name_ar).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+
+      if (teacherRes.data?.id) validTeacherId = teacherRes.data.id;
+      if (gradeRes.data?.id) validGradeLevelId = gradeRes.data.id;
     }
 
     const courseData = {
@@ -131,4 +139,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'حدث خطأ أثناء إضافة الدورة' }, { status: 500 });
   }
 }
+
 

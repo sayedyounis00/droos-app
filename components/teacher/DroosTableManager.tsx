@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import GradeLevelFilterChips from "./GradeLevelFilterChips";
 import GradeLevelSelector from "./GradeLevelSelector";
 import { CourseItem, LessonItem, EGYPTIAN_GRADE_LEVELS } from "@/lib/droos-data";
@@ -61,39 +61,53 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
     description: "",
   });
 
-  // Toast Notification State
+  // Toast Notification State & Timeout Ref
   const [toastMessage, setToastMessage] = useState("");
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage("");
+    }, 3500);
+  }, []);
 
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async (signal?: AbortSignal) => {
     setIsFetching(true);
     if (courses.length === 0) setIsLoading(true);
     try {
       const params = selectedGradeIds.length > 0 ? `gradeLevelIds=${selectedGradeIds.join(',')}` : 'gradeLevelIds=all';
-      const res = await fetch(`/api/teacher/courses?${params}`);
+      const res = await fetch(`/api/teacher/courses?${params}`, { signal });
       const data = await res.json();
       if (data.success) {
         setCourses(data.courses);
         // Automatically expand first course if present
         if (data.courses.length > 0 && expandedCourseIds.length === 0) {
           setExpandedCourseIds([data.courses[0].id]);
-          if (data.courses[0].modules.length > 0) {
+          if (data.courses[0].modules?.length > 0) {
             setExpandedModuleIds([data.courses[0].modules[0].id]);
           }
         }
       }
-    } catch (err) {
-      console.error("Error fetching courses:", err);
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        console.error("Error fetching courses:", err);
+      }
     } finally {
       setIsLoading(false);
       setIsFetching(false);
     }
-  };
+  }, [selectedGradeIds, courses.length, expandedCourseIds.length]);
 
   useEffect(() => {
-    fetchCourses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const controller = new AbortController();
+    fetchCourses(controller.signal);
+    return () => {
+      controller.abort();
+    };
   }, [selectedGradeIds]);
+
 
   const toggleCourseExpand = (courseId: string) => {
     setExpandedCourseIds((prev) =>
@@ -126,7 +140,7 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
 
       const data = await res.json();
       if (data.success) {
-        setToastMessage("تمت إضافة الدورة التعليمية بنجاح");
+        showToast("تمت إضافة الدورة التعليمية بنجاح");
         setIsCourseModalOpen(false);
         setNewCourseTitle("");
         setNewCourseDesc("");
@@ -134,7 +148,6 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
           setCourses(prev => [data.course, ...prev]);
           setExpandedCourseIds(prev => [...prev, data.course.id]);
         }
-        setTimeout(() => setToastMessage(""), 3500);
       }
     } catch {
       alert("حدث خطأ أثناء إضافة الدورة");
@@ -159,7 +172,7 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
       if (data.success) {
         setNewModuleTitles((prev) => ({ ...prev, [courseId]: "" }));
         setActiveModuleAddCourseId(null);
-        setToastMessage("تمت إضافة الدرس بنجاح");
+        showToast("تمت إضافة الدرس بنجاح");
         if (data.module) {
           setCourses(prev => prev.map(course => {
             if (course.id === courseId) {
@@ -169,7 +182,6 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
           }));
           setExpandedModuleIds((prev) => [...prev, data.module.id]);
         }
-        setTimeout(() => setToastMessage(""), 3500);
       }
     } catch {
       alert("حدث خطأ أثناء إضافة الدرس");
@@ -186,14 +198,13 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
       });
       const data = await res.json();
       if (data.success) {
-        setToastMessage("تم حذف الدرس بنجاح");
+        showToast("تم حذف الدرس بنجاح");
         setCourses(prev => prev.map(course => {
           if (course.id === courseId) {
             return { ...course, modules: course.modules.filter(m => m.id !== moduleId) };
           }
           return course;
         }));
-        setTimeout(() => setToastMessage(""), 3500);
       }
     } catch {
       alert("حدث خطأ أثناء حذف الدرس");
@@ -226,7 +237,7 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
           [moduleId]: { title: "", videoUrl: "", description: "" },
         }));
         setActiveLessonAddModuleId(null);
-        setToastMessage("تمت إضافة الحصة بنجاح");
+        showToast("تمت إضافة الحصة بنجاح");
         if (data.lesson) {
           setCourses(prev => prev.map(course => {
             if (course.id === courseId) {
@@ -243,7 +254,6 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
             return course;
           }));
         }
-        setTimeout(() => setToastMessage(""), 3500);
       }
     } catch {
       alert("حدث خطأ أثناء إضافة الحصة");
@@ -260,7 +270,7 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
       });
       const data = await res.json();
       if (data.success) {
-        setToastMessage("تم حذف الحصة بنجاح");
+        showToast("تم حذف الحصة بنجاح");
         setCourses(prev => prev.map(course => {
           return {
             ...course,
@@ -272,7 +282,6 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
             })
           };
         }));
-        setTimeout(() => setToastMessage(""), 3500);
       }
     } catch {
       alert("حدث خطأ أثناء حذف الحصة");
@@ -322,8 +331,7 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
           }))
         );
         setEditingLessonId(null);
-        setToastMessage("تم تحديث بيانات الحصة بنجاح");
-        setTimeout(() => setToastMessage(""), 3500);
+        showToast("تم تحديث بيانات الحصة بنجاح");
       } else {
         alert(data.error || "حدث خطأ أثناء تعديل الحصة");
       }
@@ -331,6 +339,7 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
       alert("حدث خطأ أثناء تعديل الحصة");
     }
   };
+
 
 
   const getGradeName = (course: CourseItem) => {
