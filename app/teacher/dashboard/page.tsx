@@ -124,7 +124,7 @@ export default function TeacherDashboardPage() {
 
   // Full-page builder view — replaces dashboard entirely
   if (showBuilder) {
-    return <HomePageBuilder onBack={() => setShowBuilder(false)} />;
+    return <HomePageBuilder onBack={() => setShowBuilder(false)} teacherGrades={teacher?.grades || grades} />;
   }
 
   return (

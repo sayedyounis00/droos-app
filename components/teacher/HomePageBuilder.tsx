@@ -18,12 +18,6 @@ interface AboutSection {
   bio: string;
 }
 
-interface CoursesSection {
-  title: string;
-  subtitle: string;
-  courses: { title: string; level: string; price: string }[];
-}
-
 interface TestimonialsSection {
   title: string;
   testimonials: { name: string; grade: string; text: string }[];
@@ -38,7 +32,6 @@ interface ContactSection {
 interface HomePageData {
   hero: HeroSection;
   about: AboutSection;
-  courses: CoursesSection;
   testimonials: TestimonialsSection;
   contact: ContactSection;
 }
@@ -58,15 +51,6 @@ const defaultData: HomePageData = {
     experience: "12 سنة خبرة",
     bio: "معلم رياضيات بخبرة أكثر من 12 عاماً في التدريس لطلاب الثانوية العامة. حصّلت على أعلى نسبة نجاح في المحافظة ثلاث سنوات متتالية.",
   },
-  courses: {
-    title: "الكورسات المتاحة",
-    subtitle: "اختر المستوى الذي يناسبك وابدأ رحلتك الآن",
-    courses: [
-      { title: "رياضيات الصف الأول الثانوي", level: "أساسي", price: "350 جنيه / شهر" },
-      { title: "رياضيات الصف الثاني الثانوي", level: "متوسط", price: "400 جنيه / شهر" },
-      { title: "رياضيات الصف الثالث الثانوي", level: "متقدم", price: "500 جنيه / شهر" },
-    ],
-  },
   testimonials: {
     title: "ماذا يقول الطلاب؟",
     testimonials: [
@@ -82,12 +66,18 @@ const defaultData: HomePageData = {
   },
 };
 
+const defaultTeachingYears = [
+  "الصف الأول الثانوي",
+  "الصف الثاني الثانوي",
+  "الصف الثالث الثانوي",
+];
+
 // ─── Section Icons ────────────────────────────────────────────────────────────
 
 const sections = [
   { id: "hero", label: "القسم الرئيسي", icon: "🏠", color: "#1F7A7B" },
   { id: "about", label: "نبذة عني", icon: "👤", color: "#3A8DDE" },
-  { id: "courses", label: "الكورسات", icon: "📚", color: "#E8A83C" },
+  { id: "courses", label: "السنوات الدراسية", icon: "🎓", color: "#E8A83C" },
   { id: "testimonials", label: "آراء الطلاب", icon: "💬", color: "#2E9E5B" },
   { id: "contact", label: "التواصل", icon: "📞", color: "#D9483D" },
 ] as const;
@@ -96,11 +86,19 @@ type SectionId = (typeof sections)[number]["id"];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function HomePageBuilder({ onBack }: { onBack: () => void }) {
+export default function HomePageBuilder({
+  onBack,
+  teacherGrades,
+}: {
+  onBack: () => void;
+  teacherGrades?: string[];
+}) {
   const [data, setData] = useState<HomePageData>(defaultData);
   const [activeSection, setActiveSection] = useState<SectionId>("hero");
   const [previewMode, setPreviewMode] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const displayGrades = teacherGrades && teacherGrades.length > 0 ? teacherGrades : defaultTeachingYears;
 
   const handleSave = () => {
     setSaved(true);
@@ -174,7 +172,7 @@ export default function HomePageBuilder({ onBack }: { onBack: () => void }) {
       {previewMode ? (
         // ── Full Preview Mode ──────────────────────────────────────────────────
         <div className="flex-1 overflow-auto">
-          <PreviewPage data={data} />
+          <PreviewPage data={data} teachingYears={displayGrades} />
         </div>
       ) : (
         // ── Editor Mode ────────────────────────────────────────────────────────
@@ -212,7 +210,7 @@ export default function HomePageBuilder({ onBack }: { onBack: () => void }) {
               <AboutEditor data={data.about} onChange={(about) => setData({ ...data, about })} />
             )}
             {activeSection === "courses" && (
-              <CoursesEditor data={data.courses} onChange={(courses) => setData({ ...data, courses })} />
+              <TeachingYearsEditor grades={displayGrades} />
             )}
             {activeSection === "testimonials" && (
               <TestimonialsEditor data={data.testimonials} onChange={(testimonials) => setData({ ...data, testimonials })} />
@@ -229,7 +227,7 @@ export default function HomePageBuilder({ onBack }: { onBack: () => void }) {
               <span className="text-[10px] text-[#8A929B]">محدّثة تلقائياً</span>
             </div>
             <div className="transform scale-[0.45] origin-top-right w-[220%] pointer-events-none overflow-hidden">
-              <PreviewPage data={data} />
+              <PreviewPage data={data} teachingYears={displayGrades} />
             </div>
           </aside>
         </div>
@@ -297,32 +295,27 @@ function AboutEditor({ data, onChange }: { data: AboutSection; onChange: (d: Abo
   );
 }
 
-function CoursesEditor({ data, onChange }: { data: CoursesSection; onChange: (d: CoursesSection) => void }) {
-  const updateCourse = (idx: number, field: string, val: string) => {
-    const updated = data.courses.map((c, i) => i === idx ? { ...c, [field]: val } : c);
-    onChange({ ...data, courses: updated });
-  };
-
+function TeachingYearsEditor({ grades }: { grades: string[] }) {
   return (
-    <EditorCard title="الكورسات المتاحة" icon="📚">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <InputField label="عنوان القسم" value={data.title} onChange={(v) => onChange({ ...data, title: v })} />
-        <InputField label="النص التوضيحي" value={data.subtitle} onChange={(v) => onChange({ ...data, subtitle: v })} />
-      </div>
-      <div className="space-y-4">
-        {data.courses.map((course, idx) => (
-          <div key={idx} className="rounded-2xl border border-[#EEF0F2] bg-[#F7F8F9] p-4 space-y-3">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1F7A7B] text-[10px] font-bold text-white">{idx + 1}</span>
-              <span className="text-xs font-bold text-[#4A5158]">كورس {idx + 1}</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <InputField label="اسم الكورس" value={course.title} onChange={(v) => updateCourse(idx, "title", v)} />
-              <InputField label="المستوى" value={course.level} onChange={(v) => updateCourse(idx, "level", v)} />
-              <InputField label="السعر" value={course.price} onChange={(v) => updateCourse(idx, "price", v)} />
-            </div>
+    <EditorCard title="السنوات والصفوف الدراسية (قسم ثابت)" icon="🎓">
+      <div className="rounded-2xl border border-[#CFE6E6] bg-[#EAF4F4]/60 p-5 space-y-4">
+        <div className="flex items-center gap-2 text-[#0F4E4F] font-bold text-sm">
+          <span>🔒 هذا القسم ثابت ومربوط ببيانات الحساب</span>
+        </div>
+        <p className="text-xs text-[#4A5158] leading-relaxed">
+          يتم عرض السنوات والصفوف الدراسية الخاصة بالمعلم تلقائياً من بيانات الحساب، ولا يمكن تعديل الدروس أو الكورسات الفردية من هنا.
+        </p>
+        <div className="pt-3 border-t border-[#CFE6E6]">
+          <span className="block text-xs font-bold text-[#1C2126] mb-3">الصفوف الدراسية المتاحة حالياً:</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {grades.map((grade, idx) => (
+              <div key={idx} className="flex items-center gap-2.5 rounded-xl bg-white border border-[#7EB8B9] p-3 text-xs font-bold text-[#1F7A7B] shadow-sm">
+                <span className="text-base">🎓</span>
+                <span>{grade}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </EditorCard>
   );
@@ -370,7 +363,7 @@ function ContactEditor({ data, onChange }: { data: ContactSection; onChange: (d:
 
 // ─── Preview Page ─────────────────────────────────────────────────────────────
 
-function PreviewPage({ data }: { data: HomePageData }) {
+function PreviewPage({ data, teachingYears }: { data: HomePageData; teachingYears: string[] }) {
   return (
     <div dir="rtl" className="font-sans bg-[#F7F8F9] text-[#1C2126]" style={{ minWidth: 360 }}>
 
@@ -417,25 +410,23 @@ function PreviewPage({ data }: { data: HomePageData }) {
         </div>
       </section>
 
-      {/* 3. Courses Section */}
+      {/* 3. Teaching Years Section (Static) */}
       <section className="bg-white py-16">
         <div className="mx-auto max-w-4xl px-6">
           <div className="text-center mb-10">
-            <h2 className="text-2xl font-black text-[#1C2126] mb-2">{data.courses.title}</h2>
-            <p className="text-sm text-[#8A929B]">{data.courses.subtitle}</p>
+            <h2 className="text-2xl font-black text-[#1C2126] mb-2">السنوات والصفوف الدراسية</h2>
+            <p className="text-sm text-[#8A929B]">الصفوف والمراحل المتاحة للتسجيل مع المعلم</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {data.courses.courses.map((c, i) => (
-              <div key={i} className="rounded-3xl border border-[#EEF0F2] bg-[#F7F8F9] p-6 hover:shadow-lg hover:border-[#7EB8B9] transition-all group">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-2xl">📖</span>
-                  <span className="rounded-full bg-[#EAF4F4] px-2.5 py-0.5 text-[10px] font-bold text-[#1F7A7B]">{c.level}</span>
+            {teachingYears.map((year, i) => (
+              <div key={i} className="rounded-3xl border border-[#EEF0F2] bg-[#F7F8F9] p-6 text-center hover:shadow-lg hover:border-[#7EB8B9] transition-all group">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF4F4] text-2xl text-[#1F7A7B]">
+                  🎓
                 </div>
-                <h3 className="text-sm font-bold text-[#1C2126] mb-3 leading-snug">{c.title}</h3>
-                <div className="text-lg font-black text-[#1F7A7B]">{c.price}</div>
-                <button className="mt-4 w-full rounded-xl bg-[#1F7A7B] py-2.5 text-xs font-bold text-white hover:bg-[#166465] transition-colors group-hover:shadow-md">
-                  اشترك الآن
-                </button>
+                <h3 className="text-base font-bold text-[#1C2126] mb-2">{year}</h3>
+                <span className="inline-block rounded-full bg-[#EAF4F4] px-3 py-1 text-xs font-bold text-[#1F7A7B]">
+                  متاح للتسجيل
+                </span>
               </div>
             ))}
           </div>
