@@ -3,17 +3,38 @@
 import { useState, useEffect } from "react";
 import GradeLevelFilterChips from "./GradeLevelFilterChips";
 import GradeLevelSelector from "./GradeLevelSelector";
-import { CourseItem, EGYPTIAN_GRADE_LEVELS } from "@/lib/droos-data";
+import { CourseItem, LessonItem, EGYPTIAN_GRADE_LEVELS } from "@/lib/droos-data";
 
-export default function DroosTableManager() {
+interface DroosTableManagerProps {
+  teacherGrades?: string[];
+}
+
+export default function DroosTableManager({ teacherGrades = [] }: DroosTableManagerProps) {
   const [courses, setCourses] = useState<CourseItem[]>([]);
-  const [selectedGradeId, setSelectedGradeId] = useState<string>("all");
+  const [selectedGradeIds, setSelectedGradeIds] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("droos_selected_grade_filter");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {}
+      }
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("droos_selected_grade_filter", JSON.stringify(selectedGradeIds));
+    }
+  }, [selectedGradeIds]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
 
   // Expanded State Trackers
   const [expandedCourseIds, setExpandedCourseIds] = useState<string[]>([]);
-  const  [expandedModuleIds, setExpandedModuleIds] = useState<string[]>([]);
+  const [expandedModuleIds, setExpandedModuleIds] = useState<string[]>([]);
 
   // Create Course Modal State
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
@@ -26,20 +47,30 @@ export default function DroosTableManager() {
   const [newModuleTitles, setNewModuleTitles] = useState<Record<string, string>>({});
   const [activeModuleAddCourseId, setActiveModuleAddCourseId] = useState<string | null>(null);
 
-  // New Lesson Input States { moduleId: { title, contentType, videoUrl } }
+  // New Lesson Input States { moduleId: { title, videoUrl, description } }
   const [newLessonData, setNewLessonData] = useState<
-    Record<string, { title: string; contentType: 'video' | 'pdf' | 'quiz' | 'text'; videoUrl: string }>
+    Record<string, { title: string; videoUrl: string; description: string }>
   >({});
   const [activeLessonAddModuleId, setActiveLessonAddModuleId] = useState<string | null>(null);
 
+  // Edit Lesson Input States
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [editingLessonData, setEditingLessonData] = useState<{ title: string; videoUrl: string; description: string }>({
+    title: "",
+    videoUrl: "",
+    description: "",
+  });
+
   // Toast Notification State
   const [toastMessage, setToastMessage] = useState("");
+
 
   const fetchCourses = async () => {
     setIsFetching(true);
     if (courses.length === 0) setIsLoading(true);
     try {
-      const res = await fetch(`/api/teacher/courses?gradeLevelId=${selectedGradeId}`);
+      const params = selectedGradeIds.length > 0 ? `gradeLevelIds=${selectedGradeIds.join(',')}` : 'gradeLevelIds=all';
+      const res = await fetch(`/api/teacher/courses?${params}`);
       const data = await res.json();
       if (data.success) {
         setCourses(data.courses);
@@ -62,7 +93,7 @@ export default function DroosTableManager() {
   useEffect(() => {
     fetchCourses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGradeId]);
+  }, [selectedGradeIds]);
 
   const toggleCourseExpand = (courseId: string) => {
     setExpandedCourseIds((prev) =>
@@ -171,7 +202,7 @@ export default function DroosTableManager() {
 
   // Create Lesson Handler (+ إضافة حصة)
   const handleAddLesson = async (courseId: string, moduleId: string) => {
-    const lessonInfo = newLessonData[moduleId] || { title: "", contentType: "video", videoUrl: "" };
+    const lessonInfo = newLessonData[moduleId] || { title: "", videoUrl: "", description: "" };
     if (!lessonInfo.title.trim()) return;
 
     try {
@@ -182,8 +213,9 @@ export default function DroosTableManager() {
           course_id: courseId,
           module_id: moduleId,
           title: lessonInfo.title,
-          content_type: lessonInfo.contentType,
+          content_type: "video",
           video_url: lessonInfo.videoUrl,
+          description: lessonInfo.description,
         }),
       });
 
@@ -191,7 +223,7 @@ export default function DroosTableManager() {
       if (data.success) {
         setNewLessonData((prev) => ({
           ...prev,
-          [moduleId]: { title: "", contentType: "video", videoUrl: "" },
+          [moduleId]: { title: "", videoUrl: "", description: "" },
         }));
         setActiveLessonAddModuleId(null);
         setToastMessage("تمت إضافة الحصة بنجاح");
@@ -247,6 +279,60 @@ export default function DroosTableManager() {
     }
   };
 
+  // Start Editing Lesson
+  const startEditingLesson = (lesson: LessonItem) => {
+    setEditingLessonId(lesson.id);
+    setEditingLessonData({
+      title: lesson.title,
+      videoUrl: lesson.video_url || "",
+      description: lesson.description || "",
+    });
+  };
+
+  // Update Lesson Handler
+  const handleUpdateLesson = async (moduleId: string, lessonId: string) => {
+    if (!editingLessonData.title.trim()) return;
+
+    try {
+      const res = await fetch("/api/teacher/lessons", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: lessonId,
+          title: editingLessonData.title,
+          video_url: editingLessonData.videoUrl,
+          description: editingLessonData.description,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.lesson) {
+        setCourses((prev) =>
+          prev.map((course) => ({
+            ...course,
+            modules: course.modules.map((mod) => {
+              if (mod.id === moduleId) {
+                return {
+                  ...mod,
+                  lessons: mod.lessons.map((l) => (l.id === lessonId ? data.lesson : l)),
+                };
+              }
+              return mod;
+            }),
+          }))
+        );
+        setEditingLessonId(null);
+        setToastMessage("تم تحديث بيانات الحصة بنجاح");
+        setTimeout(() => setToastMessage(""), 3500);
+      } else {
+        alert(data.error || "حدث خطأ أثناء تعديل الحصة");
+      }
+    } catch {
+      alert("حدث خطأ أثناء تعديل الحصة");
+    }
+  };
+
+
   const getGradeName = (course: CourseItem) => {
     if (course.grade_levels?.name_ar) return course.grade_levels.name_ar;
     const found = EGYPTIAN_GRADE_LEVELS.find((g) => g.id === course.grade_level_id);
@@ -255,7 +341,7 @@ export default function DroosTableManager() {
 
   return (
     <div className="space-y-6">
-      
+
       {/* Toast Alert */}
       {toastMessage && (
         <div className="flex items-center justify-between rounded-2xl bg-[#2E9E5B] p-4 text-sm font-bold text-white shadow-lg shadow-[#2E9E5B]/20">
@@ -299,8 +385,9 @@ export default function DroosTableManager() {
       {/* Grade Level Filter Chips Bar */}
       <div className="rounded-3xl border border-[#EEF0F2] bg-white p-5 shadow-sm">
         <GradeLevelFilterChips
-          selectedGradeId={selectedGradeId}
-          onSelectGrade={setSelectedGradeId}
+          selectedGradeIds={selectedGradeIds}
+          onSelectGrade={setSelectedGradeIds}
+          teacherGrades={teacherGrades}
         />
       </div>
 
@@ -314,7 +401,7 @@ export default function DroosTableManager() {
           <p className="mt-3 text-xs font-bold text-[#8A929B]">جاري تحميل الدورات والدروس...</p>
         </div>
       ) : courses.length === 0 ? (
-        
+
         /* Empty State (No Courses) */
         <div className="rounded-3xl border border-dashed border-[#D3D7DC] bg-white p-10 sm:p-14 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-[#EAF4F4] text-[#1F7A7B]">
@@ -347,7 +434,7 @@ export default function DroosTableManager() {
                 key={course.id}
                 className="rounded-3xl border border-[#EEF0F2] bg-white overflow-hidden shadow-sm transition-all hover:shadow-md"
               >
-                
+
                 {/* Course Bar Header */}
                 <div
                   onClick={() => toggleCourseExpand(course.id)}
@@ -401,7 +488,7 @@ export default function DroosTableManager() {
                 {/* Course Expanded Content (الدروس والموديولات) */}
                 {isCourseExpanded && (
                   <div className="p-5 sm:p-6 bg-[#F7F8F9]/50 border-t border-[#EEF0F2] space-y-4">
-                    
+
                     {/* Top Action Bar */}
                     <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-3">
                       <h4 className="text-xs font-bold text-[#1C2126] flex items-center gap-1.5">
@@ -446,7 +533,7 @@ export default function DroosTableManager() {
 
                     {/* Modules List (الدروس) */}
                     {course.modules.length === 0 ? (
-                      
+
                       /* Empty Modules State */
                       <div className="rounded-2xl border border-dashed border-[#D3D7DC] bg-white p-6 text-center">
                         <p className="text-xs font-bold text-[#8A929B]">لا توجد دروس مضافة في هذه الدورة حتى الآن</p>
@@ -465,8 +552,8 @@ export default function DroosTableManager() {
                           const isAddingLesson = activeLessonAddModuleId === moduleItem.id;
                           const currentLessonInput = newLessonData[moduleItem.id] || {
                             title: "",
-                            contentType: "video",
                             videoUrl: "",
+                            description: "",
                           };
 
                           return (
@@ -474,7 +561,7 @@ export default function DroosTableManager() {
                               key={moduleItem.id}
                               className="rounded-2xl border border-[#D3D7DC] bg-white overflow-hidden"
                             >
-                              
+
                               {/* Module Bar */}
                               <div
                                 onClick={() => toggleModuleExpand(moduleItem.id)}
@@ -532,7 +619,7 @@ export default function DroosTableManager() {
                               {/* Module Lessons Content */}
                               {isModuleExpanded && (
                                 <div className="p-4 bg-[#F7F8F9] border-t border-[#EEF0F2] space-y-3">
-                                  
+
                                   {/* Add Lesson Form */}
                                   {isAddingLesson && (
                                     <div className="space-y-3 rounded-xl bg-white p-3.5 border border-[#E8A83C] shadow-sm">
@@ -540,7 +627,11 @@ export default function DroosTableManager() {
                                         <span className="text-xs font-bold text-[#9C6B18]">إضافة حصة جديدة لهذا الدرس:</span>
                                       </div>
 
-                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                      <div className="flex flex-col gap-3">
+                                        <div className="flex items-center gap-2 bg-[#F7F8F9] px-3 py-2 rounded-xl text-xs font-bold text-[#4A5158]">
+                                          <span className="text-xl">🎥</span>
+                                          فيديو تعليمي
+                                        </div>
                                         <input
                                           type="text"
                                           placeholder="اسم الحصة (مثال: الحصة 1: حل التمارين)"
@@ -552,27 +643,34 @@ export default function DroosTableManager() {
                                             }))
                                           }
                                           autoFocus
-                                          className="col-span-2 rounded-xl border border-[#D3D7DC] px-3 py-2 text-xs outline-none focus:border-[#1F7A7B]"
+                                          className="w-full rounded-xl border border-[#D3D7DC] px-3 py-2 text-xs outline-none focus:border-[#1F7A7B]"
                                         />
 
-                                        <select
-                                          value={currentLessonInput.contentType}
+                                        <input
+                                          type="url"
+                                          placeholder="رابط الفيديو (مثال: https://youtube.com/...)"
+                                          value={currentLessonInput.videoUrl}
                                           onChange={(e) =>
                                             setNewLessonData((prev) => ({
                                               ...prev,
-                                              [moduleItem.id]: {
-                                                ...currentLessonInput,
-                                                contentType: e.target.value as "video" | "pdf" | "quiz" | "text",
-                                              },
+                                              [moduleItem.id]: { ...currentLessonInput, videoUrl: e.target.value },
                                             }))
                                           }
-                                          className="rounded-xl border border-[#D3D7DC] px-2 py-2 text-xs outline-none focus:border-[#1F7A7B]"
-                                        >
-                                          <option value="video">🎥 فيديو تعليمي</option>
-                                          <option value="pdf">📄 ملف PDF</option>
-                                          <option value="quiz">📝 اختبار تفاعلي</option>
-                                          <option value="text">📖 شرح كتابي</option>
-                                        </select>
+                                          className="w-full rounded-xl border border-[#D3D7DC] px-3 py-2 text-xs outline-none focus:border-[#1F7A7B] text-left dir-ltr"
+                                        />
+
+                                        <textarea
+                                          placeholder="وصف الحصة (اختياري)"
+                                          value={currentLessonInput.description || ""}
+                                          onChange={(e) =>
+                                            setNewLessonData((prev) => ({
+                                              ...prev,
+                                              [moduleItem.id]: { ...currentLessonInput, description: e.target.value },
+                                            }))
+                                          }
+                                          rows={2}
+                                          className="w-full rounded-xl border border-[#D3D7DC] px-3 py-2 text-xs outline-none focus:border-[#1F7A7B]"
+                                        />
                                       </div>
 
                                       <div className="flex justify-end gap-2 pt-1">
@@ -605,36 +703,139 @@ export default function DroosTableManager() {
                                     </div>
                                   ) : (
                                     <div className="space-y-2">
-                                      {moduleItem.lessons.map((lesson, lsnIdx) => (
-                                        <div
-                                          key={lesson.id}
-                                          className="flex items-center justify-between rounded-xl bg-white p-3 border border-[#EEF0F2] text-xs"
-                                        >
-                                          <div className="flex items-center gap-2.5">
-                                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#EEF0F2] text-[10px] font-bold text-[#4A5158]">
-                                              {lsnIdx + 1}
-                                            </span>
-                                            <span className="font-bold text-[#1C2126]">{lesson.title}</span>
-                                            
-                                            <span className="rounded-md bg-[#F7F8F9] px-2 py-0.5 text-[10px] font-medium text-[#1F7A7B]">
-                                              {lesson.content_type === "video" && "🎥 فيديو"}
-                                              {lesson.content_type === "pdf" && "📄 ملف PDF"}
-                                              {lesson.content_type === "quiz" && "📝 اختبار"}
-                                              {lesson.content_type === "text" && "📖 نص"}
-                                            </span>
-                                          </div>
+                                      {moduleItem.lessons.map((lesson, lsnIdx) => {
+                                        const isEditing = editingLessonId === lesson.id;
 
-                                          <button
-                                            onClick={() => handleDeleteLesson(moduleItem.id, lesson.id)}
-                                            className="text-[#8A929B] hover:text-[#D9483D]"
-                                            title="حذف الحصة"
+                                        if (isEditing) {
+                                          return (
+                                            <div
+                                              key={lesson.id}
+                                              className="rounded-2xl bg-white p-4 border-2 border-[#1F7A7B] shadow-sm space-y-3"
+                                            >
+                                              <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-2">
+                                                <span className="text-xs font-bold text-[#1F7A7B]">تعديل بيانات الحصة</span>
+                                                <button
+                                                  onClick={() => setEditingLessonId(null)}
+                                                  className="text-[#8A929B] hover:text-[#1C2126]"
+                                                >
+                                                  ✕
+                                                </button>
+                                              </div>
+
+                                              <div className="space-y-2.5">
+                                                <div>
+                                                  <label className="block text-[11px] font-bold text-[#1C2126] mb-1">اسم الحصة</label>
+                                                  <input
+                                                    type="text"
+                                                    placeholder="اسم الحصة"
+                                                    value={editingLessonData.title}
+                                                    onChange={(e) =>
+                                                      setEditingLessonData((prev) => ({ ...prev, title: e.target.value }))
+                                                    }
+                                                    className="w-full rounded-xl border border-[#D3D7DC] px-3.5 py-2 text-sm font-bold text-[#1C2126] outline-none focus:border-[#1F7A7B]"
+                                                  />
+                                                </div>
+
+                                                <div>
+                                                  <label className="block text-[11px] font-bold text-[#1C2126] mb-1">رابط الفيديو (اختياري)</label>
+                                                  <input
+                                                    type="url"
+                                                    placeholder="https://youtube.com/..."
+                                                    value={editingLessonData.videoUrl}
+                                                    onChange={(e) =>
+                                                      setEditingLessonData((prev) => ({ ...prev, videoUrl: e.target.value }))
+                                                    }
+                                                    className="w-full rounded-xl border border-[#D3D7DC] px-3.5 py-2 text-xs font-medium outline-none focus:border-[#1F7A7B] text-left dir-ltr"
+                                                  />
+                                                </div>
+
+                                                <div>
+                                                  <label className="block text-[11px] font-bold text-[#1C2126] mb-1">وصف الحصة (اختياري)</label>
+                                                  <textarea
+                                                    rows={2}
+                                                    placeholder="وصف الحصة..."
+                                                    value={editingLessonData.description}
+                                                    onChange={(e) =>
+                                                      setEditingLessonData((prev) => ({ ...prev, description: e.target.value }))
+                                                    }
+                                                    className="w-full rounded-xl border border-[#D3D7DC] px-3.5 py-2 text-xs font-medium outline-none focus:border-[#1F7A7B]"
+                                                  />
+                                                </div>
+                                              </div>
+
+                                              <div className="flex justify-end gap-2 pt-1">
+                                                <button
+                                                  onClick={() => handleUpdateLesson(moduleItem.id, lesson.id)}
+                                                  className="rounded-xl bg-[#1F7A7B] px-4 py-2 text-xs font-bold text-white hover:bg-[#166465]"
+                                                >
+                                                  حفظ التعديلات
+                                                </button>
+                                                <button
+                                                  onClick={() => setEditingLessonId(null)}
+                                                  className="rounded-xl bg-[#EEF0F2] px-3.5 py-2 text-xs font-bold text-[#4A5158]"
+                                                >
+                                                  إلغاء
+                                                </button>
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+
+                                        return (
+                                          <div
+                                            key={lesson.id}
+                                            className="rounded-2xl bg-white p-4 border border-[#EEF0F2] text-sm space-y-3 hover:border-[#CFE6E6] transition-all shadow-2xs"
                                           >
-                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                          </button>
-                                        </div>
-                                      ))}
+                                            {/* Top row: Number, Title (Bigger font), Badge, Edit & Delete Buttons */}
+                                            <div className="flex items-start justify-between gap-3">
+                                              <div className="flex items-start gap-3">
+                                                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#EEF0F2] text-xs font-bold text-[#4A5158] shrink-0 mt-0.5">
+                                                  {lsnIdx + 1}
+                                                </span>
+                                                <div className="space-y-1">
+                                                  <div className="flex flex-wrap items-center gap-2">
+                                                    <h6 className="text-base sm:text-lg font-bold text-[#1C2126] leading-snug">
+                                                      {lesson.title}
+                                                    </h6>
+                                                    <span className="rounded-lg bg-[#EAF4F4] px-2.5 py-0.5 text-xs font-bold text-[#1F7A7B]">
+                                                      🎥 فيديو
+                                                    </span>
+                                                  </div>
+                                                  {lesson.description && (
+                                                    <p className="text-sm text-[#4A5158] leading-relaxed pt-1">
+                                                      {lesson.description}
+                                                    </p>
+                                                  )}
+                                                </div>
+                                              </div>
+
+                                              {/* Action Buttons: Modify / Edit & Delete */}
+                                              <div className="flex items-center gap-1.5 shrink-0">
+                                                <button
+                                                  onClick={() => startEditingLesson(lesson)}
+                                                  className="flex items-center gap-1 rounded-xl bg-[#EAF4F4] px-3 py-1.5 text-xs font-bold text-[#1F7A7B] hover:bg-[#CFE6E6] transition-colors"
+                                                  title="تعديل بيانات الحصة"
+                                                >
+                                                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                  </svg>
+                                                  <span>تعديل</span>
+                                                </button>
+
+                                                <button
+                                                  onClick={() => handleDeleteLesson(moduleItem.id, lesson.id)}
+                                                  className="p-1.5 text-[#8A929B] hover:text-[#D9483D] rounded-xl hover:bg-[#F7F8F9] transition-colors"
+                                                  title="حذف الحصة"
+                                                >
+                                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                  </svg>
+                                                </button>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   )}
 
@@ -671,7 +872,7 @@ export default function DroosTableManager() {
             </div>
 
             <form onSubmit={handleCreateCourse} className="space-y-5">
-              
+
               {/* Title */}
               <div>
                 <label className="block text-xs font-bold text-[#1C2126] mb-1.5">

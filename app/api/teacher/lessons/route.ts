@@ -5,7 +5,7 @@ import { LessonItem } from '@/lib/droos-data';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { module_id, title, content_type, video_url } = body || {};
+    const { module_id, title, content_type, video_url, description } = body || {};
 
     if (!module_id || !title) {
       return NextResponse.json(
@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         content_type: content_type || 'video',
         video_url: video_url ? video_url.trim() : null,
+        description: description ? description.trim() : null,
         sort_order: 1,
       })
       .select()
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
       title: data.title,
       content_type: data.content_type || 'video',
       video_url: data.video_url || undefined,
+      description: data.description || undefined,
       created_at: data.created_at,
     };
 
@@ -49,6 +51,55 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'حدث خطأ أثناء إضافة الحصة' }, { status: 500 });
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, title, video_url, description } = body || {};
+
+    if (!id || !title) {
+      return NextResponse.json(
+        { success: false, error: 'معرف الحصة واسم الحصة مطلوبان' },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabase
+      .from('lessons')
+      .update({
+        title: title.trim(),
+        video_url: video_url ? video_url.trim() : null,
+        description: description ? description.trim() : null,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error || !data) {
+      console.error('Supabase DB lesson update error:', error);
+      return NextResponse.json(
+        { success: false, error: error?.message || 'فشل تحديث الحصة في قاعدة البيانات' },
+        { status: 500 }
+      );
+    }
+
+    const updatedLesson: LessonItem = {
+      id: data.id,
+      module_id: data.module_id,
+      title: data.title,
+      content_type: data.content_type || 'video',
+      video_url: data.video_url || undefined,
+      description: data.description || undefined,
+      created_at: data.created_at,
+    };
+
+    return NextResponse.json({ success: true, lesson: updatedLesson, message: 'تم تحديث الحصة بنجاح' });
+  } catch (error) {
+    console.error('Error updating lesson:', error);
+    return NextResponse.json({ success: false, error: 'حدث خطأ أثناء تعديل الحصة' }, { status: 500 });
+  }
+}
+
 
 export async function DELETE(request: NextRequest) {
   try {
