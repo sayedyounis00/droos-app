@@ -1,6 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import {
+  PLATFORM_THEMES,
+  THEME_LIST,
+  ThemeId,
+  PlatformTheme,
+} from "@/lib/themes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -75,11 +81,11 @@ const defaultTeachingYears = [
 // ─── Section Icons ────────────────────────────────────────────────────────────
 
 const sections = [
-  { id: "hero", label: "القسم الرئيسي", icon: "🏠", color: "#1F7A7B" },
-  { id: "about", label: "نبذة عني", icon: "👤", color: "#3A8DDE" },
-  { id: "courses", label: "السنوات الدراسية", icon: "🎓", color: "#E8A83C" },
-  { id: "testimonials", label: "آراء الطلاب", icon: "💬", color: "#2E9E5B" },
-  { id: "contact", label: "التواصل", icon: "📞", color: "#D9483D" },
+  { id: "hero", label: "القسم الرئيسي", icon: "🏠" },
+  { id: "about", label: "نبذة عني", icon: "👤" },
+  { id: "courses", label: "السنوات الدراسية", icon: "🎓" },
+  { id: "testimonials", label: "آراء الطلاب", icon: "💬" },
+  { id: "contact", label: "التواصل", icon: "📞" },
 ] as const;
 
 type SectionId = (typeof sections)[number]["id"];
@@ -97,8 +103,22 @@ export default function HomePageBuilder({
   const [activeSection, setActiveSection] = useState<SectionId>("hero");
   const [previewMode, setPreviewMode] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [selectedThemeId, setSelectedThemeId] = useState<ThemeId>("horizon");
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showThemePicker, setShowThemePicker] = useState(false);
 
+  const currentTheme = PLATFORM_THEMES[selectedThemeId] || PLATFORM_THEMES["horizon"];
   const displayGrades = teacherGrades && teacherGrades.length > 0 ? teacherGrades : defaultTeachingYears;
+
+  const handleSelectTheme = (id: ThemeId) => {
+    setSelectedThemeId(id);
+    const theme = PLATFORM_THEMES[id];
+    if (theme.isDarkDefault) {
+      setIsDarkMode(true);
+    } else {
+      setIsDarkMode(false);
+    }
+  };
 
   const handleSave = () => {
     setSaved(true);
@@ -106,16 +126,18 @@ export default function HomePageBuilder({
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F8F9] flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-[#F7F8F9] flex flex-col font-sans" dir="rtl">
 
-      {/* Builder Top Bar */}
-      <div className="sticky top-0 z-40 bg-[#0F4E4F] text-white shadow-xl">
-        <div className="mx-auto max-w-screen-xl flex items-center justify-between px-4 py-3.5 sm:px-6">
-          {/* Back + Title */}
-          <div className="flex items-center gap-4">
+      {/* Builder Top Bar Header */}
+      <header className="sticky top-0 z-40 bg-[#0F4E4F] text-white shadow-xl">
+        <div className="mx-auto max-w-screen-2xl flex flex-wrap items-center justify-between px-3 py-2.5 sm:px-6 sm:py-3.5 gap-3">
+          
+          {/* Left: Back + Title */}
+          <div className="flex items-center gap-3">
             <button
               onClick={onBack}
               className="flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 px-3 py-2 text-xs font-bold transition-colors"
+              title="العودة للوحة التحكم"
             >
               <svg className="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -123,13 +145,120 @@ export default function HomePageBuilder({
               <span className="hidden sm:inline">العودة للداشبورد</span>
             </button>
             <div>
-              <h1 className="text-sm font-black tracking-tight">منشئ الصفحة الرئيسية</h1>
-              <p className="text-[10px] text-white/60 hidden sm:block">صمّم صفحتك الشخصية كما تريد</p>
+              <h1 className="text-xs sm:text-sm font-black tracking-tight flex items-center gap-2">
+                منشئ الصفحة الرئيسية
+              </h1>
+              <p className="text-[10px] text-white/60 hidden md:block">صمّم هوية منصتك المعمارية وشاهد التغيير مباشر</p>
             </div>
           </div>
 
-          {/* Actions */}
+          {/* Center: Theme Selector Dropdown Trigger in Header */}
+          <div className="relative">
+            <button
+              onClick={() => setShowThemePicker(!showThemePicker)}
+              className="flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 py-2 px-3 text-xs font-bold transition-all shadow-inner"
+            >
+              <span className="text-sm">🎨</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-white/70 text-[11px] hidden xs:inline">الثيم:</span>
+                <span className="font-bold text-[#F3C97C]">{currentTheme.nameAr}</span>
+              </div>
+              {/* Color swatch dots */}
+              <div className="hidden sm:flex items-center gap-1 dir-ltr">
+                {currentTheme.swatches.slice(0, 3).map((hex, i) => (
+                  <span key={i} className="h-2.5 w-2.5 rounded-full border border-white/30" style={{ backgroundColor: hex }} />
+                ))}
+              </div>
+              <svg className={`h-3.5 w-3.5 text-white/70 transition-transform ${showThemePicker ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Theme Picker Dropdown Menu */}
+            {showThemePicker && (
+              <>
+                <div className="fixed inset-0 z-50" onClick={() => setShowThemePicker(false)} />
+                <div className="absolute left-0 sm:right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white text-[#1C2126] shadow-2xl border border-[#EEF0F2] p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-2.5 mb-2.5 px-1">
+                    <span className="text-xs font-black text-[#0F4E4F] flex items-center gap-1.5">
+                      <span>🎨</span> اختر هُوية المنصة (5 ثيمات مخصصة)
+                    </span>
+                    <span className="text-[10px] text-[#8A929B]">تحدث فوراً في المعاينة</span>
+                  </div>
+
+                  <div className="space-y-2 max-h-96 overflow-auto pl-1 pr-1">
+                    {THEME_LIST.map((t) => {
+                      const isSelected = t.id === selectedThemeId;
+                      return (
+                        <button
+                          key={t.id}
+                          onClick={() => {
+                            handleSelectTheme(t.id);
+                            setShowThemePicker(false);
+                          }}
+                          className={`w-full text-right p-3 rounded-xl border transition-all flex flex-col gap-1.5 ${
+                            isSelected
+                              ? "border-[#1F7A7B] bg-[#EAF4F4]/70 ring-2 ring-[#1F7A7B]/20"
+                              : "border-[#EEF0F2] hover:bg-[#F7F8F9] hover:border-[#D3D7DC]"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-[#1C2126] flex items-center gap-2">
+                              {t.nameAr}
+                              <span className="text-[10px] font-normal text-[#8A929B] dir-ltr">({t.name})</span>
+                            </span>
+                            {isSelected && (
+                              <span className="rounded-full bg-[#1F7A7B] p-0.5 text-white">
+                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-[11px] text-[#4A5158] leading-tight line-clamp-1">{t.bestFor}</p>
+
+                          {/* Swatches Strip */}
+                          <div className="flex items-center justify-between pt-1">
+                            <div className="flex items-center gap-1 dir-ltr">
+                              {t.swatches.map((color, idx) => (
+                                <span
+                                  key={idx}
+                                  className="h-3.5 w-3.5 rounded-full border border-black/10 shadow-sm"
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-[10px] font-bold text-[#8A929B] bg-white px-2 py-0.5 rounded-md border border-[#EEF0F2]">
+                              {t.mood.split("،")[0]}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Right: Preview Actions & Mode Toggle */}
           <div className="flex items-center gap-2">
+            
+            {/* Light / Dark Mode Toggle Button */}
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
+                isDarkMode
+                  ? "bg-[#1C2126] text-[#F3C97C] border-white/20"
+                  : "bg-white/10 hover:bg-white/20 text-white border-white/10"
+              }`}
+              title={isDarkMode ? "الوضع الليلي مفعّل" : "الوضع النهار مفعّل"}
+            >
+              <span>{isDarkMode ? "🌙 داكن" : "☀️ فاتح"}</span>
+            </button>
+
+            {/* Preview Toggle */}
             <button
               onClick={() => setPreviewMode(!previewMode)}
               className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
@@ -145,9 +274,10 @@ export default function HomePageBuilder({
               <span className="hidden sm:inline">{previewMode ? "إغلاق المعاينة" : "معاينة"}</span>
             </button>
 
+            {/* Save Button */}
             <button
               onClick={handleSave}
-              className="flex items-center gap-1.5 rounded-xl bg-[#E8A83C] hover:bg-[#C88A22] px-4 py-2 text-xs font-bold text-[#0F4E4F] transition-all active:scale-95 shadow-md shadow-[#E8A83C]/30"
+              className="flex items-center gap-1.5 rounded-xl bg-[#E8A83C] hover:bg-[#C88A22] px-3.5 py-2 text-xs font-bold text-[#0F4E4F] transition-all active:scale-95 shadow-md shadow-[#E8A83C]/30"
             >
               {saved ? (
                 <>
@@ -161,18 +291,25 @@ export default function HomePageBuilder({
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                   </svg>
-                  <span>حفظ التغييرات</span>
+                  <span>حفظ</span>
                 </>
               )}
             </button>
+
           </div>
+
         </div>
-      </div>
+      </header>
 
       {previewMode ? (
         // ── Full Preview Mode ──────────────────────────────────────────────────
         <div className="flex-1 overflow-auto">
-          <PreviewPage data={data} teachingYears={displayGrades} />
+          <PreviewPage
+            data={data}
+            teachingYears={displayGrades}
+            theme={currentTheme}
+            isDarkMode={isDarkMode}
+          />
         </div>
       ) : (
         // ── Editor Mode ────────────────────────────────────────────────────────
@@ -198,6 +335,21 @@ export default function HomePageBuilder({
                   <span className="hidden sm:inline">{sec.label}</span>
                 </button>
               ))}
+
+              {/* Theme quick status box in sidebar */}
+              <div className="hidden lg:block mt-6 p-3 rounded-2xl border border-[#EEF0F2] bg-[#F7F8F9] text-xs">
+                <span className="block text-[10px] font-bold text-[#8A929B] mb-1">الثيم النشط:</span>
+                <div className="font-bold text-[#1C2126] flex items-center justify-between">
+                  <span>{currentTheme.nameAr}</span>
+                  <div className="flex gap-1 dir-ltr">
+                    {currentTheme.swatches.slice(0, 3).map((hex, i) => (
+                      <span key={i} className="h-2 w-2 rounded-full" style={{ backgroundColor: hex }} />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[10px] text-[#5C646B] mt-1 line-clamp-2">{currentTheme.mood}</p>
+              </div>
+
             </div>
           </aside>
 
@@ -220,14 +372,29 @@ export default function HomePageBuilder({
             )}
           </div>
 
-          {/* Right: Live Mini-Preview */}
-          <aside className="hidden xl:block xl:w-80 border-r border-[#EEF0F2] bg-white overflow-auto">
-            <div className="p-4 border-b border-[#EEF0F2] flex items-center justify-between">
-              <span className="text-xs font-bold text-[#1C2126]">معاينة مباشرة</span>
-              <span className="text-[10px] text-[#8A929B]">محدّثة تلقائياً</span>
+          {/* Right: Live Mini-Preview Panel */}
+          <aside className="hidden xl:block xl:w-96 border-r border-[#EEF0F2] bg-white overflow-auto flex-shrink-0">
+            <div className="p-3 border-b border-[#EEF0F2] flex items-center justify-between bg-[#F7F8F9]">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#1C2126]">معاينة مباشرة</span>
+                <span className="rounded-full bg-[#1F7A7B]/10 text-[#1F7A7B] text-[10px] font-bold px-2 py-0.5">
+                  {currentTheme.nameAr}
+                </span>
+              </div>
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="text-[11px] font-bold text-[#4A5158] hover:text-[#1F7A7B]"
+              >
+                {isDarkMode ? "🌙 ليلي" : "☀️ نهاري"}
+              </button>
             </div>
-            <div className="transform scale-[0.45] origin-top-right w-[220%] pointer-events-none overflow-hidden">
-              <PreviewPage data={data} teachingYears={displayGrades} />
+            <div className="transform scale-[0.46] origin-top-right w-[217%] pointer-events-none overflow-hidden shadow-inner">
+              <PreviewPage
+                data={data}
+                teachingYears={displayGrades}
+                theme={currentTheme}
+                isDarkMode={isDarkMode}
+              />
             </div>
           </aside>
         </div>
@@ -361,70 +528,216 @@ function ContactEditor({ data, onChange }: { data: ContactSection; onChange: (d:
   );
 }
 
-// ─── Preview Page ─────────────────────────────────────────────────────────────
+// ─── Preview Page Component ───────────────────────────────────────────────────
 
-function PreviewPage({ data, teachingYears }: { data: HomePageData; teachingYears: string[] }) {
+function PreviewPage({
+  data,
+  teachingYears,
+  theme,
+  isDarkMode,
+}: {
+  data: HomePageData;
+  teachingYears: string[];
+  theme: PlatformTheme;
+  isDarkMode: boolean;
+}) {
+  const colors = isDarkMode ? theme.dark : theme.light;
+
   return (
-    <div dir="rtl" className="font-sans bg-[#F7F8F9] text-[#1C2126]" style={{ minWidth: 360 }}>
+    <div
+      dir="rtl"
+      className="transition-colors duration-300 min-h-screen"
+      style={{
+        backgroundColor: colors.background,
+        color: colors.textPrimary,
+        fontFamily: theme.fonts.body,
+        minWidth: 360,
+      }}
+    >
+      {/* Google Fonts Dynamic Load */}
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&family=Baloo+Bhaijaan+2:wght@400;600;800&family=Cairo:wght@400;600;700;900&family=El+Messiri:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;600;700&family=Tajawal:wght@400;500;700;900&display=swap"
+      />
 
       {/* 1. Hero Section */}
-      <section className="relative bg-gradient-to-br from-[#0A3536] via-[#0F4E4F] to-[#1F7A7B] text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.06]" style={{backgroundImage:"radial-gradient(circle at 20% 50%, #E8A83C 0%, transparent 60%), radial-gradient(circle at 80% 20%, #7EB8B9 0%, transparent 50%)"}} />
-        <div className="relative mx-auto max-w-4xl px-6 py-20 sm:py-28 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-xs font-bold text-white/90 mb-6 backdrop-blur-md">
-            <span className="h-2 w-2 rounded-full bg-[#E8A83C] animate-pulse" />
-            {data.hero.badge}
+      <section
+        className="relative overflow-hidden transition-all duration-300"
+        style={{
+          background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
+          color: "#FFFFFF",
+        }}
+      >
+        {/* Subtle decorative background pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.08] pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(circle at 20% 50%, ${colors.accent} 0%, transparent 60%), radial-gradient(circle at 80% 20%, ${colors.border} 0%, transparent 50%)`,
+          }}
+        />
+
+        <div className="relative mx-auto max-w-4xl px-6 py-16 sm:py-24 text-center">
+          
+          {/* Badge */}
+          <div
+            className="inline-flex items-center gap-2 px-4 py-1.5 text-xs font-bold mb-6 backdrop-blur-md transition-all"
+            style={{
+              backgroundColor: "rgba(255, 255, 255, 0.12)",
+              border: `1px solid rgba(255, 255, 255, 0.25)`,
+              borderRadius: theme.radius.badge === "rounded-full" ? "9999px" : theme.radius.cardCss,
+              color: "#FFFFFF",
+            }}
+          >
+            <span
+              className="h-2 w-2 rounded-full animate-pulse"
+              style={{ backgroundColor: colors.accent }}
+            />
+            <span>{data.hero.badge}</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black leading-tight mb-5">
+
+          {/* Headline */}
+          <h1
+            className="text-3xl sm:text-5xl font-black leading-tight mb-5 tracking-tight"
+            style={{ fontFamily: theme.fonts.display }}
+          >
             {data.hero.headline}
           </h1>
-          <p className="text-base sm:text-lg text-white/75 max-w-xl mx-auto mb-8 leading-relaxed">
+
+          {/* Subheadline */}
+          <p className="text-sm sm:text-lg text-white/80 max-w-xl mx-auto mb-8 leading-relaxed">
             {data.hero.subheadline}
           </p>
-          <button className="inline-flex items-center gap-2 rounded-2xl bg-[#E8A83C] hover:bg-[#C88A22] text-[#0A3536] font-black px-8 py-4 text-sm shadow-xl shadow-[#E8A83C]/30 transition-colors">
-            {data.hero.ctaText}
+
+          {/* CTA Button */}
+          <button
+            className="inline-flex items-center gap-2 font-black px-8 py-4 text-sm transition-all active:scale-95"
+            style={{
+              backgroundColor: colors.accent,
+              color: colors.primary,
+              borderRadius: theme.radius.buttonCss,
+              boxShadow: theme.shadow.button,
+            }}
+          >
+            <span>{data.hero.ctaText}</span>
             <svg className="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
+
         </div>
-        {/* wave divider */}
-        <svg viewBox="0 0 1440 60" className="w-full text-[#F7F8F9]" fill="currentColor" preserveAspectRatio="none">
-          <path d="M0,60 C360,0 1080,60 1440,0 L1440,60 Z" />
+
+        {/* Decorative Wave Divider */}
+        <svg
+          viewBox="0 0 1440 48"
+          className="w-full h-8 sm:h-12"
+          style={{ color: colors.background }}
+          fill="currentColor"
+          preserveAspectRatio="none"
+        >
+          <path d="M0,48 C360,0 1080,48 1440,0 L1440,48 Z" />
         </svg>
       </section>
 
       {/* 2. About Section */}
-      <section className="mx-auto max-w-4xl px-6 py-16">
-        <div className="flex flex-col sm:flex-row items-center gap-8">
-          <div className="flex-shrink-0 flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-[#1F7A7B] to-[#0F4E4F] text-4xl font-black text-white shadow-xl shadow-[#1F7A7B]/20">
+      <section className="mx-auto max-w-4xl px-6 py-14">
+        <div
+          className="p-6 sm:p-8 transition-all flex flex-col sm:flex-row items-center gap-8"
+          style={{
+            backgroundColor: colors.surface,
+            border: `1px solid ${colors.border}`,
+            borderRadius: theme.radius.cardCss,
+            boxShadow: theme.shadow.card,
+          }}
+        >
+          {/* Avatar Icon */}
+          <div
+            className="flex-shrink-0 flex h-24 w-24 items-center justify-center text-4xl font-black text-white shadow-lg transition-transform hover:scale-105"
+            style={{
+              backgroundColor: colors.primary,
+              borderRadius: theme.radius.cardCss,
+            }}
+          >
             {data.about.name.charAt(0)}
           </div>
+
           <div className="text-center sm:text-right">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#EAF4F4] px-3 py-1 text-xs font-bold text-[#1F7A7B] mb-3">
-              {data.about.subject} · {data.about.experience}
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1 text-xs font-bold mb-3"
+              style={{
+                backgroundColor: `${colors.primary}15`,
+                color: colors.primary,
+                borderRadius: theme.radius.badge === "rounded-full" ? "9999px" : "6px",
+              }}
+            >
+              <span>{data.about.subject}</span>
+              <span>•</span>
+              <span>{data.about.experience}</span>
             </div>
-            <h2 className="text-2xl font-black text-[#0F4E4F] mb-3">{data.about.name}</h2>
-            <p className="text-sm text-[#4A5158] leading-relaxed max-w-xl">{data.about.bio}</p>
+
+            <h2
+              className="text-2xl font-black mb-3"
+              style={{ fontFamily: theme.fonts.display, color: colors.textPrimary }}
+            >
+              {data.about.name}
+            </h2>
+
+            <p className="text-sm leading-relaxed max-w-xl" style={{ color: colors.textSecondary }}>
+              {data.about.bio}
+            </p>
           </div>
         </div>
       </section>
 
       {/* 3. Teaching Years Section (Static) */}
-      <section className="bg-white py-16">
+      <section className="py-14" style={{ backgroundColor: colors.surface }}>
         <div className="mx-auto max-w-4xl px-6">
           <div className="text-center mb-10">
-            <h2 className="text-2xl font-black text-[#1C2126] mb-2">السنوات والصفوف الدراسية</h2>
-            <p className="text-sm text-[#8A929B]">الصفوف والمراحل المتاحة للتسجيل مع المعلم</p>
+            <h2
+              className="text-2xl font-black mb-2"
+              style={{ fontFamily: theme.fonts.display, color: colors.textPrimary }}
+            >
+              السنوات والصفوف الدراسية
+            </h2>
+            <p className="text-sm" style={{ color: colors.textSecondary }}>
+              الصفوف والمراحل المتاحة للتسجيل مع المعلم
+            </p>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {teachingYears.map((year, i) => (
-              <div key={i} className="rounded-3xl border border-[#EEF0F2] bg-[#F7F8F9] p-6 text-center hover:shadow-lg hover:border-[#7EB8B9] transition-all group">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF4F4] text-2xl text-[#1F7A7B]">
+              <div
+                key={i}
+                className="p-6 text-center transition-all hover:-translate-y-1"
+                style={{
+                  backgroundColor: colors.background,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: theme.radius.cardCss,
+                  boxShadow: theme.shadow.card,
+                }}
+              >
+                <div
+                  className="mx-auto mb-4 flex h-12 w-12 items-center justify-center text-xl font-bold"
+                  style={{
+                    backgroundColor: `${colors.primary}15`,
+                    color: colors.primary,
+                    borderRadius: theme.radius.cardCss,
+                  }}
+                >
                   🎓
                 </div>
-                <h3 className="text-base font-bold text-[#1C2126] mb-2">{year}</h3>
-                <span className="inline-block rounded-full bg-[#EAF4F4] px-3 py-1 text-xs font-bold text-[#1F7A7B]">
+
+                <h3 className="text-base font-bold mb-2" style={{ color: colors.textPrimary }}>
+                  {year}
+                </h3>
+
+                <span
+                  className="inline-block px-3 py-1 text-xs font-bold"
+                  style={{
+                    backgroundColor: `${colors.accent}20`,
+                    color: colors.primary,
+                    borderRadius: theme.radius.badge === "rounded-full" ? "9999px" : "6px",
+                  }}
+                >
                   متاح للتسجيل
                 </span>
               </div>
@@ -434,21 +747,52 @@ function PreviewPage({ data, teachingYears }: { data: HomePageData; teachingYear
       </section>
 
       {/* 4. Testimonials Section */}
-      <section className="py-16 bg-gradient-to-br from-[#EAF4F4] to-[#F7F8F9]">
+      <section className="py-14" style={{ backgroundColor: colors.background }}>
         <div className="mx-auto max-w-4xl px-6">
-          <h2 className="text-2xl font-black text-[#1C2126] text-center mb-10">{data.testimonials.title}</h2>
+          <h2
+            className="text-2xl font-black text-center mb-10"
+            style={{ fontFamily: theme.fonts.display, color: colors.textPrimary }}
+          >
+            {data.testimonials.title}
+          </h2>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {data.testimonials.testimonials.map((t, i) => (
-              <div key={i} className="rounded-3xl bg-white border border-[#EEF0F2] p-6 shadow-sm">
-                <div className="text-[#E8A83C] text-xl mb-3">❝</div>
-                <p className="text-sm text-[#4A5158] leading-relaxed mb-5">{t.text}</p>
-                <div className="flex items-center gap-3 border-t border-[#F7F8F9] pt-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EAF4F4] text-xs font-bold text-[#1F7A7B]">
+              <div
+                key={i}
+                className="p-6 transition-all"
+                style={{
+                  backgroundColor: colors.surface,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: theme.radius.cardCss,
+                  boxShadow: theme.shadow.card,
+                }}
+              >
+                <div className="text-xl mb-3" style={{ color: colors.accent }}>
+                  ❝
+                </div>
+
+                <p className="text-xs sm:text-sm leading-relaxed mb-5" style={{ color: colors.textSecondary }}>
+                  {t.text}
+                </p>
+
+                <div className="flex items-center gap-3 pt-4" style={{ borderTop: `1px solid ${colors.border}` }}>
+                  <div
+                    className="flex h-8 w-8 items-center justify-center text-xs font-bold text-white"
+                    style={{
+                      backgroundColor: colors.primary,
+                      borderRadius: "9999px",
+                    }}
+                  >
                     {t.name.charAt(0)}
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-[#1C2126]">{t.name}</div>
-                    <div className="text-[10px] text-[#8A929B]">{t.grade}</div>
+                    <div className="text-xs font-bold" style={{ color: colors.textPrimary }}>
+                      {t.name}
+                    </div>
+                    <div className="text-[10px]" style={{ color: colors.textSecondary }}>
+                      {t.grade}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -458,39 +802,64 @@ function PreviewPage({ data, teachingYears }: { data: HomePageData; teachingYear
       </section>
 
       {/* 5. Contact Section */}
-      <section className="bg-[#0F4E4F] text-white py-16">
-        <div className="mx-auto max-w-2xl px-6 text-center">
-          <h2 className="text-2xl font-black mb-3">تواصل معنا</h2>
-          <p className="text-sm text-white/70 mb-8">{data.contact.note}</p>
+      <section
+        className="py-16 text-center transition-all"
+        style={{
+          backgroundColor: colors.primary,
+          color: "#FFFFFF",
+        }}
+      >
+        <div className="mx-auto max-w-2xl px-6">
+          <h2 className="text-2xl font-black mb-3" style={{ fontFamily: theme.fonts.display }}>
+            تواصل معنا
+          </h2>
+          <p className="text-xs sm:text-sm opacity-80 mb-8 max-w-md mx-auto">
+            {data.contact.note}
+          </p>
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href={`tel:${data.contact.phone}`}
-              className="flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 px-6 py-3.5 text-sm font-bold transition-colors"
+              className="flex items-center gap-2 px-6 py-3.5 text-xs font-bold border transition-all"
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                borderColor: "rgba(255, 255, 255, 0.2)",
+                borderRadius: theme.radius.buttonCss,
+                color: "#FFFFFF",
+              }}
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
-              {data.contact.phone}
+              <span>{data.contact.phone}</span>
             </a>
+
             <a
               href={`https://wa.me/${data.contact.whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-2xl bg-[#E8A83C] hover:bg-[#C88A22] text-[#0A3536] px-6 py-3.5 text-sm font-bold transition-colors shadow-lg shadow-[#E8A83C]/20"
+              className="flex items-center gap-2 px-6 py-3.5 text-xs font-black transition-all shadow-lg"
+              style={{
+                backgroundColor: colors.accent,
+                color: colors.primary,
+                borderRadius: theme.radius.buttonCss,
+                boxShadow: theme.shadow.button,
+              }}
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
               </svg>
-              واتساب
+              <span>واتساب</span>
             </a>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#0A3536] text-white/40 text-center text-xs py-6">
-        مدعوم بواسطة <span className="text-white/70 font-bold">دُرُوس</span> — منصة التعليم الذكي
+      <footer className="text-center text-xs py-6 opacity-60" style={{ backgroundColor: colors.background, color: colors.textSecondary }}>
+        مدعوم بواسطة منصة <span className="font-bold" style={{ color: colors.primary }}>دُرُوس</span> — {theme.nameAr}
       </footer>
+
     </div>
   );
 }
