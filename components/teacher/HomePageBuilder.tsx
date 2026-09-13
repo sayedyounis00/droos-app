@@ -208,6 +208,15 @@ export default function HomePageBuilder({
   const [saved, setSaved] = useState(false);
   const [selectedThemeId, setSelectedThemeId] = useState<ThemeId>("horizon");
   const [showThemePicker, setShowThemePicker] = useState(false);
+  const [activePage, setActivePage] = useState<PageId>("home");
+  const [showPagePicker, setShowPagePicker] = useState(false);
+
+  const [modulesData, setModulesData] = useState<ModulesPageData>(defaultModulesData);
+  const [lessonsData, setLessonsData] = useState<LessonsPageData>(defaultLessonsData);
+  const [lessonDetailData, setLessonDetailData] = useState<LessonDetailData>(defaultLessonDetailData);
+
+  const currentPage = pages.find((p) => p.id === activePage) || pages[0];
+
   const [editModal, setEditModal] = useState<{
     title: string;
     label: string;
@@ -435,43 +444,6 @@ export default function HomePageBuilder({
 
             {/* Preview Toggle */}
             <button
-              onClick={() => setPreviewMode(!previewMode)}
-              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
-                previewMode
-                  ? "bg-[#E8A83C] text-[#0F4E4F]"
-                  : "bg-white/10 hover:bg-white/20 text-white"
-              }`}
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              <span className="hidden sm:inline">{previewMode ? "إغلاق المعاينة" : "معاينة"}</span>
-            </button>
-
-            {/* Save Button */}
-            <button
-              onClick={handleSave}
-              className="flex items-center gap-1.5 rounded-xl bg-[#E8A83C] hover:bg-[#C88A22] px-3.5 py-2 text-xs font-bold text-[#0F4E4F] transition-all active:scale-95 shadow-md shadow-[#E8A83C]/30"
-            >
-              {saved ? (
-                <>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>تم الحفظ!</span>
-                </>
-              ) : (
-                <>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                  </svg>
-                  <span>حفظ</span>
-                </>
-              )}
-            </button>
-
-          </div>
               onClick={() => setPreviewMode(!previewMode)}
               className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
                 previewMode
