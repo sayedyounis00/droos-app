@@ -1,0 +1,3 @@
+ALTER TABLE public.teachers ALTER COLUMN grades DROP DEFAULT;
+ALTER TABLE public.teachers ALTER COLUMN grades TYPE TEXT[] USING CASE WHEN grades IS NULL THEN '{}'::TEXT[] ELSE ARRAY[grades] END;
+ALTER TABLE public.teachers ALTER COLUMN grades SET DEFAULT '{}'::TEXT[];

@@ -6,7 +6,7 @@ export interface TeacherUser {
   phone: string;
   password?: string;
   subject: string;
-  grades: string;
+  grades: string[];
   governorate: string;
   bio: string;
   subdomain?: string;
@@ -51,7 +51,7 @@ export async function authenticateTeacher(
       phone: dbTeacher.phone,
       password: dbTeacher.password_hash,
       subject: dbTeacher.subject || 'الرياضيات',
-      grades: dbTeacher.grades || 'المراحل الإعدادية والابتدائية',
+      grades: Array.isArray(dbTeacher.grades) ? dbTeacher.grades : (dbTeacher.grades ? [dbTeacher.grades] : []),
       governorate: dbTeacher.governorate || 'القاهرة',
       bio: dbTeacher.bio || '',
       subdomain: dbTeacher.subdomain || '',

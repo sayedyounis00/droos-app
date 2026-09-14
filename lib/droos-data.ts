@@ -19,6 +19,7 @@ export interface LessonItem {
   title: string; // اسم الحصة
   content_type: 'video' | 'pdf' | 'quiz' | 'text';
   video_url?: string;
+  description?: string;
   created_at: string;
 }
 

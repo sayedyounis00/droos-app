@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       phone: phone.trim(),
       subject: subject.trim(),
-      grades: (grades || 'المراحل الإعدادية والابتدائية').trim(),
+      grades: Array.isArray(grades) ? grades : [],
       governorate: (governorate || 'القاهرة').trim(),
       bio: (bio || '').trim(),
       subdomain: finalSubdomain || null,

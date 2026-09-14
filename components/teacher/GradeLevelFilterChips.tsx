@@ -3,14 +3,19 @@
 import { EGYPTIAN_STAGES, EGYPTIAN_GRADE_LEVELS } from "@/lib/droos-data";
 
 interface GradeLevelFilterChipsProps {
-  selectedGradeId: string; // 'all' or specific grade_level.id
-  onSelectGrade: (gradeId: string) => void;
+  selectedGradeIds: string[]; // empty array means 'all'
+  onSelectGrade: (gradeIds: string[]) => void;
+  teacherGrades?: string[]; // Array of grade names the teacher teaches
 }
 
 export default function GradeLevelFilterChips({
-  selectedGradeId,
+  selectedGradeIds,
   onSelectGrade,
+  teacherGrades = [],
 }: GradeLevelFilterChipsProps) {
+  // If teacherGrades is provided and not empty, filter the options
+  const shouldFilterByTeacher = teacherGrades.length > 0;
+
   return (
     <div className="w-full space-y-3">
       {/* Label header */}
@@ -21,9 +26,9 @@ export default function GradeLevelFilterChips({
           </svg>
           تصفية الكورسات حسب الصف الدراسي:
         </span>
-        {selectedGradeId !== "all" && (
+        {selectedGradeIds.length > 0 && (
           <button
-            onClick={() => onSelectGrade("all")}
+            onClick={() => onSelectGrade([])}
             className="text-[11px] font-bold text-[#1F7A7B] hover:underline"
           >
             إعادة ضبط الفلتر (عرض الكل)
@@ -36,9 +41,9 @@ export default function GradeLevelFilterChips({
         
         {/* Leading "الكل" Chip */}
         <button
-          onClick={() => onSelectGrade("all")}
+          onClick={() => onSelectGrade([])}
           className={`flex items-center gap-1.5 rounded-2xl py-2 px-4 text-xs font-bold transition-all whitespace-nowrap border shrink-0 ${
-            selectedGradeId === "all"
+            selectedGradeIds.length === 0
               ? "bg-[#1F7A7B] text-white border-[#1F7A7B] shadow-md shadow-[#1F7A7B]/20"
               : "bg-white text-[#4A5158] border-[#EEF0F2] hover:border-[#1F7A7B]/40 hover:bg-[#F7F8F9]"
           }`}
@@ -48,9 +53,15 @@ export default function GradeLevelFilterChips({
 
         {/* Grouped by Stage */}
         {EGYPTIAN_STAGES.map((stage) => {
-          const stageGrades = EGYPTIAN_GRADE_LEVELS.filter(
+          let stageGrades = EGYPTIAN_GRADE_LEVELS.filter(
             (g) => g.stage_id === stage.id
           );
+
+          if (shouldFilterByTeacher) {
+            stageGrades = stageGrades.filter(g => teacherGrades.includes(g.name_ar));
+          }
+
+          if (stageGrades.length === 0) return null;
 
           return (
             <div key={stage.id} className="flex items-center gap-2 shrink-0">
@@ -61,12 +72,18 @@ export default function GradeLevelFilterChips({
 
               {/* Stage Grade Level Chips */}
               {stageGrades.map((grade) => {
-                const isSelected = selectedGradeId === grade.id;
+                const isSelected = selectedGradeIds.includes(grade.id);
 
                 return (
                   <button
                     key={grade.id}
-                    onClick={() => onSelectGrade(grade.id)}
+                    onClick={() => {
+                      if (isSelected) {
+                        onSelectGrade(selectedGradeIds.filter(id => id !== grade.id));
+                      } else {
+                        onSelectGrade([...selectedGradeIds, grade.id]);
+                      }
+                    }}
                     className={`flex items-center gap-1.5 rounded-2xl py-2 px-3.5 text-xs font-bold transition-all whitespace-nowrap border ${
                       isSelected
                         ? "bg-[#1F7A7B] text-white border-[#1F7A7B] shadow-md shadow-[#1F7A7B]/20"
