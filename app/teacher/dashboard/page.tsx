@@ -635,7 +635,7 @@ export default function TeacherDashboardPage() {
 
         {/* Tab 2: Droos Table Manager */}
         {activeTab === "droos" && (
-          <DroosTableManager teacherGrades={teacher?.grades || []} />
+          <DroosTableManager teacherGrades={teacher?.grades && teacher.grades.length > 0 ? teacher.grades : grades} />
         )}
 
         {/* Tab 3: Students Placeholder */}
