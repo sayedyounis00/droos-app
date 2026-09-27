@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import GradeLevelFilterChips from "./GradeLevelFilterChips";
 import GradeLevelSelector from "./GradeLevelSelector";
-import { CourseItem, LessonItem, EGYPTIAN_GRADE_LEVELS } from "@/lib/droos-data";
+import { CourseItem, ModuleItem, LessonItem, EGYPTIAN_GRADE_LEVELS } from "@/lib/droos-data";
 
 interface DroosTableManagerProps {
   teacherGrades?: string[];
@@ -40,12 +40,25 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [newCourseTitle, setNewCourseTitle] = useState("");
   const [newCourseDesc, setNewCourseDesc] = useState("");
-  const [newCourseGradeId, setNewCourseGradeId] = useState("grd-sec-3");
+  const [newCourseGradeId, setNewCourseGradeId] = useState("");
   const [isSubmittingCourse, setIsSubmittingCourse] = useState(false);
+
+  // Edit Course Modal State
+  const [isEditCourseModalOpen, setIsEditCourseModalOpen] = useState(false);
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+  const [editCourseTitle, setEditCourseTitle] = useState("");
+  const [editCourseDesc, setEditCourseDesc] = useState("");
+  const [editCourseGradeId, setEditCourseGradeId] = useState("");
+  const [isUpdatingCourse, setIsUpdatingCourse] = useState(false);
 
   // New Module Input States { courseId: title }
   const [newModuleTitles, setNewModuleTitles] = useState<Record<string, string>>({});
   const [activeModuleAddCourseId, setActiveModuleAddCourseId] = useState<string | null>(null);
+
+  // Edit Module Input States (تعديل اسم الدرس / الوحدة)
+  const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
+  const [editingModuleTitle, setEditingModuleTitle] = useState<string>("");
+  const [isUpdatingModule, setIsUpdatingModule] = useState(false);
 
   // New Lesson Input States { moduleId: { title, videoUrl, description } }
   const [newLessonData, setNewLessonData] = useState<
@@ -125,6 +138,10 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCourseTitle.trim()) return;
+    if (!newCourseGradeId) {
+      alert("يرجى اختيار المرحلة الدراسية والصف الدراسي");
+      return;
+    }
 
     setIsSubmittingCourse(true);
     try {
@@ -144,15 +161,95 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
         setIsCourseModalOpen(false);
         setNewCourseTitle("");
         setNewCourseDesc("");
+        setNewCourseGradeId("");
         if (data.course) {
-          setCourses(prev => [data.course, ...prev]);
-          setExpandedCourseIds(prev => [...prev, data.course.id]);
+          const matchedStatic = EGYPTIAN_GRADE_LEVELS.find((g) => g.id === newCourseGradeId || g.id === data.course.grade_level_id);
+          const fullCourseItem: CourseItem = {
+            ...data.course,
+            grade_levels: data.course.grade_levels || (matchedStatic ? { name_ar: matchedStatic.name_ar } : undefined),
+            modules: data.course.modules || [],
+          };
+          setCourses(prev => [fullCourseItem, ...prev]);
+          setExpandedCourseIds(prev => [...prev, fullCourseItem.id]);
         }
+      } else {
+        alert(data.error || "حدث خطأ أثناء إضافة الدورة");
       }
     } catch {
       alert("حدث خطأ أثناء إضافة الدورة");
     } finally {
       setIsSubmittingCourse(false);
+    }
+  };
+
+  // Edit Course Handler — open modal pre-filled with existing data
+  const startEditingCourse = (course: CourseItem) => {
+    setEditingCourseId(course.id);
+    setEditCourseTitle(course.title);
+    setEditCourseDesc(course.description || "");
+    // Match either by static ID or by Arabic name so the dropdown pre-selects correctly
+    const matchedGrade = EGYPTIAN_GRADE_LEVELS.find(
+      (g) => g.id === course.grade_level_id || (course.grade_levels?.name_ar && g.name_ar === course.grade_levels.name_ar)
+    );
+    setEditCourseGradeId(matchedGrade ? matchedGrade.id : course.grade_level_id);
+    setIsEditCourseModalOpen(true);
+  };
+
+  // Update Course Handler
+  const handleUpdateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCourseTitle.trim() || !editingCourseId) return;
+    if (!editCourseGradeId) {
+      alert("يرجى اختيار الصف الدراسي");
+      return;
+    }
+
+    setIsUpdatingCourse(true);
+    try {
+      const res = await fetch("/api/teacher/courses", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingCourseId,
+          title: editCourseTitle,
+          description: editCourseDesc,
+          grade_level_id: editCourseGradeId,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.course) {
+        setCourses(prev => prev.map(c => c.id === editingCourseId ? data.course : c));
+        setIsEditCourseModalOpen(false);
+        setEditingCourseId(null);
+        showToast("تم تحديث بيانات الدورة بنجاح");
+      } else {
+        alert(data.error || "حدث خطأ أثناء تعديل الدورة");
+      }
+    } catch {
+      alert("حدث خطأ أثناء تعديل الدورة");
+    } finally {
+      setIsUpdatingCourse(false);
+    }
+  };
+
+  // Delete Course Handler
+  const handleDeleteCourse = async (courseId: string) => {
+    if (!confirm("هل أنت متأكد من رغبتك في حذف هذه الدورة التعليمية وكافة الدروس والحصص التابعة لها؟\n\n⚠️ هذا الإجراء لا يمكن التراجع عنه.")) return;
+
+    try {
+      const res = await fetch(`/api/teacher/courses?courseId=${courseId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast("تم حذف الدورة التعليمية بنجاح");
+        setCourses(prev => prev.filter(c => c.id !== courseId));
+      } else {
+        alert(data.error || "حدث خطأ أثناء حذف الدورة");
+      }
+    } catch {
+      alert("حدث خطأ أثناء حذف الدورة");
     }
   };
 
@@ -190,7 +287,7 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
 
   // Delete Module Handler
   const handleDeleteModule = async (courseId: string, moduleId: string) => {
-    if (!confirm("هل أنت تأكد من رغبتك في حذف هذا الدرس وكافة الحصص التابعة له؟")) return;
+    if (!confirm("هل أنت متأكد من رغبتك في حذف هذا الدرس وكافة الحصص التابعة له؟")) return;
 
     try {
       const res = await fetch(`/api/teacher/modules?courseId=${courseId}&moduleId=${moduleId}`, {
@@ -208,6 +305,52 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
       }
     } catch {
       alert("حدث خطأ أثناء حذف الدرس");
+    }
+  };
+
+  // Start Editing Module
+  const startEditingModule = (moduleItem: ModuleItem) => {
+    setEditingModuleId(moduleItem.id);
+    setEditingModuleTitle(moduleItem.title);
+  };
+
+  // Update Module Handler (تعديل اسم الدرس)
+  const handleUpdateModule = async (courseId: string, moduleId: string) => {
+    if (!editingModuleTitle.trim()) return;
+
+    setIsUpdatingModule(true);
+    try {
+      const res = await fetch("/api/teacher/modules", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: moduleId, title: editingModuleTitle }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.module) {
+        setCourses((prev) =>
+          prev.map((course) => {
+            if (course.id === courseId) {
+              return {
+                ...course,
+                modules: course.modules.map((m) =>
+                  m.id === moduleId ? { ...m, title: data.module.title } : m
+                ),
+              };
+            }
+            return course;
+          })
+        );
+        setEditingModuleId(null);
+        setEditingModuleTitle("");
+        showToast("تم تحديث اسم الدرس بنجاح");
+      } else {
+        alert(data.error || "حدث خطأ أثناء تعديل اسم الدرس");
+      }
+    } catch {
+      alert("حدث خطأ أثناء تعديل اسم الدرس");
+    } finally {
+      setIsUpdatingModule(false);
     }
   };
 
@@ -262,7 +405,7 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
 
   // Delete Lesson Handler
   const handleDeleteLesson = async (moduleId: string, lessonId: string) => {
-    if (!confirm("هل أنت تأكد من رغبتك في حذف هذه الحصة؟")) return;
+    if (!confirm("هل أنت متأكد من رغبتك في حذف هذه الحصة؟")) return;
 
     try {
       const res = await fetch(`/api/teacher/lessons?moduleId=${moduleId}&lessonId=${lessonId}`, {
@@ -344,7 +487,7 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
 
   const getGradeName = (course: CourseItem) => {
     if (course.grade_levels?.name_ar) return course.grade_levels.name_ar;
-    const found = EGYPTIAN_GRADE_LEVELS.find((g) => g.id === course.grade_level_id);
+    const found = EGYPTIAN_GRADE_LEVELS.find((g) => g.id === course.grade_level_id || g.name_ar === course.grade_level_id);
     return found ? found.name_ar : "غير محدد";
   };
 
@@ -446,14 +589,13 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
 
                 {/* Course Bar Header */}
                 <div
-                  onClick={() => toggleCourseExpand(course.id)}
                   className="flex items-center justify-between p-5 sm:p-6 bg-white cursor-pointer select-none border-b border-[#F7F8F9]"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 flex-1 min-w-0" onClick={() => toggleCourseExpand(course.id)}>
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF4F4] text-[#1F7A7B] shrink-0 font-bold">
                       📚
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="rounded-full bg-[#EAF4F4] px-2.5 py-0.5 text-[10px] font-bold text-[#0F4E4F]">
                           {getGradeName(course)}
@@ -466,31 +608,58 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
                         {course.title}
                       </h3>
                       {course.description && (
-                        <p className="text-xs text-[#4A5158] mt-0.5">{course.description}</p>
+                        <p className="text-xs text-[#4A5158] mt-0.5 truncate">{course.description}</p>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    {/* Add Module Quick Button */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Edit Course Button (replaces duplicate "add lesson" button) */}
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!isCourseExpanded) toggleCourseExpand(course.id);
-                        setActiveModuleAddCourseId(course.id);
+                        startEditingCourse(course);
                       }}
-                      className="hidden sm:flex items-center gap-1 rounded-xl bg-[#EAF4F4] py-2 px-3 text-xs font-bold text-[#1F7A7B] hover:bg-[#CFE6E6]"
+                      className="hidden sm:flex items-center gap-1.5 rounded-xl bg-[#EAF4F4] py-2 px-3 text-xs font-bold text-[#1F7A7B] hover:bg-[#CFE6E6] transition-colors"
+                      title="تعديل بيانات الدورة"
                     >
-                      <span>+ إضافة درس</span>
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      <span>تعديل الدورة</span>
                     </button>
 
-                    {/* Expand Chevron Icon */}
-                    <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-[#F7F8F9] text-[#4A5158] transition-transform ${isCourseExpanded ? "rotate-180 bg-[#1F7A7B] text-white" : ""}`}>
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    {/* Delete Course Button — external icon visible next to edit */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteCourse(course.id);
+                      }}
+                      className="flex items-center justify-center rounded-xl p-2 text-[#8A929B] hover:text-[#D9483D] hover:bg-[#D9483D]/10 transition-colors"
+                      title="حذف الدورة"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
-                    </div>
+                    </button>
+
+                    {/* Expand Chevron Icon — high contrast with balanced padding */}
+                    <button
+                      type="button"
+                      onClick={() => toggleCourseExpand(course.id)}
+                      className={`flex h-9 w-9 items-center justify-center p-2 rounded-xl transition-all ${
+                        isCourseExpanded
+                          ? "bg-[#1F7A7B] text-white shadow-md shadow-[#1F7A7B]/20 rotate-180"
+                          : "bg-[#EAF4F4] text-[#1F7A7B] border border-[#CFE6E6] hover:bg-[#CFE6E6]"
+                      }`}
+                      title={isCourseExpanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
@@ -498,18 +667,40 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
                 {isCourseExpanded && (
                   <div className="p-5 sm:p-6 bg-[#F7F8F9]/50 border-t border-[#EEF0F2] space-y-4">
 
-                    {/* Top Action Bar */}
+                    {/* Top Action Bar — mobile edit/delete + add lesson */}
                     <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-3">
                       <h4 className="text-xs font-bold text-[#1C2126] flex items-center gap-1.5">
                         <span>قائمة الدروس (الوحدات) في هذه الدورة:</span>
                       </h4>
 
-                      <button
-                        onClick={() => setActiveModuleAddCourseId(course.id)}
-                        className="flex items-center gap-1 text-xs font-bold text-[#1F7A7B] hover:underline"
-                      >
-                        <span>+ إضافة درس جديد</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {/* Mobile-only edit & delete buttons */}
+                        <button
+                          onClick={() => startEditingCourse(course)}
+                          className="sm:hidden flex items-center gap-1 text-xs font-bold text-[#1F7A7B] hover:underline"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          تعديل
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCourse(course.id)}
+                          className="sm:hidden flex items-center gap-1 text-xs font-bold text-[#D9483D] hover:underline"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          حذف
+                        </button>
+
+                        <button
+                          onClick={() => setActiveModuleAddCourseId(course.id)}
+                          className="flex items-center gap-1 text-xs font-bold text-[#1F7A7B] hover:underline"
+                        >
+                          <span>+ إضافة درس جديد</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Add Module Inline Form */}
@@ -576,18 +767,66 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
                                 onClick={() => toggleModuleExpand(moduleItem.id)}
                                 className="flex items-center justify-between p-4 bg-white cursor-pointer select-none"
                               >
-                                <div className="flex items-center gap-3">
-                                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#EAF4F4] text-xs font-bold text-[#1F7A7B]">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#EAF4F4] text-xs font-bold text-[#1F7A7B] shrink-0">
                                     {modIdx + 1}
                                   </span>
-                                  <div>
-                                    <h5 className="text-sm font-bold text-[#1C2126]">
-                                      {moduleItem.title}
-                                    </h5>
-                                    <span className="text-[10px] text-[#8A929B]">
-                                      {moduleItem.lessons.length} حصص تعليمية
-                                    </span>
-                                  </div>
+
+                                  {editingModuleId === moduleItem.id ? (
+                                    <div className="flex items-center gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
+                                      <input
+                                        type="text"
+                                        autoFocus
+                                        value={editingModuleTitle}
+                                        onChange={(e) => setEditingModuleTitle(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") handleUpdateModule(course.id, moduleItem.id);
+                                          if (e.key === "Escape") setEditingModuleId(null);
+                                        }}
+                                        placeholder="اسم الدرس / الوحدة..."
+                                        className="flex-1 rounded-xl border border-[#1F7A7B] bg-white px-3 py-1.5 text-xs sm:text-sm font-bold text-[#1C2126] outline-none"
+                                      />
+                                      <button
+                                        type="button"
+                                        disabled={isUpdatingModule || !editingModuleTitle.trim()}
+                                        onClick={() => handleUpdateModule(course.id, moduleItem.id)}
+                                        className="rounded-xl bg-[#1F7A7B] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#166465] disabled:opacity-50"
+                                      >
+                                        {isUpdatingModule ? "حفظ..." : "حفظ"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingModuleId(null)}
+                                        className="rounded-xl bg-[#EEF0F2] px-2.5 py-1.5 text-xs font-bold text-[#4A5158] hover:bg-[#D3D7DC]"
+                                      >
+                                        إلغاء
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <h5 className="text-sm font-bold text-[#1C2126] truncate">
+                                          {moduleItem.title}
+                                        </h5>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            startEditingModule(moduleItem);
+                                          }}
+                                          className="text-[#8A929B] hover:text-[#1F7A7B] p-1 rounded-md transition-colors"
+                                          title="تعديل اسم الدرس"
+                                        >
+                                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                      <span className="text-[10px] text-[#8A929B]">
+                                        {moduleItem.lessons.length} حصص تعليمية
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -617,7 +856,7 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
                                     </svg>
                                   </button>
 
-                                  <div className={`transform transition-transform text-[#8A929B] ${isModuleExpanded ? "rotate-180 text-[#1F7A7B]" : ""}`}>
+                                  <div className={`transform transition-transform text-[#1F7A7B] ${isModuleExpanded ? "rotate-180" : ""}`}>
                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                     </svg>
@@ -873,7 +1112,10 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
             <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-4">
               <h3 className="text-lg font-bold text-[#1C2126]">إضافة دورة تعليمية جديدة</h3>
               <button
-                onClick={() => setIsCourseModalOpen(false)}
+                onClick={() => {
+                  setIsCourseModalOpen(false);
+                  setNewCourseGradeId("");
+                }}
                 className="text-[#8A929B] hover:text-[#1C2126]"
               >
                 ✕
@@ -901,6 +1143,7 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
               <GradeLevelSelector
                 selectedGradeId={newCourseGradeId}
                 onSelectGradeId={setNewCourseGradeId}
+                teacherGrades={teacherGrades}
               />
 
               {/* Description */}
@@ -919,18 +1162,101 @@ export default function DroosTableManager({ teacherGrades = [] }: DroosTableMana
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setIsCourseModalOpen(false)}
-                  className="rounded-2xl bg-[#EEF0F2] py-3 px-5 text-sm font-bold text-[#4A5158]"
+                  onClick={() => {
+                    setIsCourseModalOpen(false);
+                    setNewCourseGradeId("");
+                  }}
+                  className="rounded-2xl bg-[#EEF0F2] py-3 px-5 text-sm font-bold text-[#4A5158] hover:bg-[#D3D7DC] transition-colors"
                 >
                   إلغاء
                 </button>
 
                 <button
                   type="submit"
-                  disabled={isSubmittingCourse}
-                  className="rounded-2xl bg-[#1F7A7B] py-3 px-6 text-sm font-bold text-white hover:bg-[#166465] disabled:opacity-50"
+                  disabled={isSubmittingCourse || !newCourseTitle.trim() || !newCourseGradeId}
+                  className="rounded-2xl bg-[#1F7A7B] py-3 px-6 text-sm font-bold text-white hover:bg-[#166465] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   {isSubmittingCourse ? "جاري الإضافة..." : "حفظ الدورة"}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Course */}
+      {isEditCourseModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-fadeIn">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-4">
+              <h3 className="text-lg font-bold text-[#1C2126]">تعديل بيانات الدورة التعليمية</h3>
+              <button
+                onClick={() => {
+                  setIsEditCourseModalOpen(false);
+                  setEditingCourseId(null);
+                }}
+                className="text-[#8A929B] hover:text-[#1C2126]"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateCourse} className="space-y-5">
+
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-bold text-[#1C2126] mb-1.5">
+                  اسم الدورة / الكورس <span className="text-[#D9483D]">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: دورة الرياضيات التطبيقية"
+                  value={editCourseTitle}
+                  onChange={(e) => setEditCourseTitle(e.target.value)}
+                  className="w-full rounded-2xl border border-[#D3D7DC] bg-[#F7F8F9] py-3 px-4 text-sm font-medium outline-none focus:border-[#1F7A7B]"
+                />
+              </div>
+
+              {/* Grade Selector */}
+              <GradeLevelSelector
+                selectedGradeId={editCourseGradeId}
+                onSelectGradeId={setEditCourseGradeId}
+                teacherGrades={teacherGrades}
+              />
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-bold text-[#1C2126] mb-1.5">وصف الدورة (اختياري)</label>
+                <textarea
+                  rows={2}
+                  placeholder="اكتب وصفاً موجزاً لما تتضمنه هذه الدورة..."
+                  value={editCourseDesc}
+                  onChange={(e) => setEditCourseDesc(e.target.value)}
+                  className="w-full rounded-2xl border border-[#D3D7DC] bg-[#F7F8F9] py-3 px-4 text-sm font-medium outline-none focus:border-[#1F7A7B]"
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditCourseModalOpen(false);
+                    setEditingCourseId(null);
+                  }}
+                  className="rounded-2xl bg-[#EEF0F2] py-3 px-5 text-sm font-bold text-[#4A5158] hover:bg-[#D3D7DC] transition-colors"
+                >
+                  إلغاء
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isUpdatingCourse || !editCourseTitle.trim() || !editCourseGradeId}
+                  className="rounded-2xl bg-[#1F7A7B] py-3 px-6 text-sm font-bold text-white hover:bg-[#166465] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isUpdatingCourse ? "جاري التحديث..." : "حفظ التعديلات"}
                 </button>
               </div>
 

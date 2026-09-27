@@ -74,3 +74,57 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, title } = body || {};
+
+    if (!id || !title) {
+      return NextResponse.json(
+        { success: false, error: 'معرف الدرس واسم الدرس مطلوبان' },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabase
+      .from('modules')
+      .update({
+        title: title.trim(),
+      })
+      .eq('id', id)
+      .select(`
+        id,
+        course_id,
+        title,
+        sort_order,
+        created_at,
+        lessons (
+          id,
+          module_id,
+          title,
+          content_type,
+          video_url,
+          description,
+          created_at
+        )
+      `)
+      .single();
+
+    if (error || !data) {
+      console.error('Supabase DB module update error:', error);
+      return NextResponse.json(
+        { success: false, error: error?.message || 'فشل تحديث اسم الدرس في قاعدة البيانات' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      module: data,
+      message: 'تم تحديث اسم الدرس بنجاح',
+    });
+  } catch (error) {
+    console.error('Error updating module:', error);
+    return NextResponse.json({ success: false, error: 'حدث خطأ أثناء تعديل اسم الدرس' }, { status: 500 });
+  }
+}
