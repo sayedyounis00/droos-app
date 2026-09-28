@@ -92,7 +92,7 @@ type SectionId = (typeof sections)[number]["id"];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-interface ModuleItem {
+interface BuilderModulePreview {
   id: string;
   title: string;
   description: string;
@@ -105,7 +105,7 @@ interface ModuleItem {
 interface ModulesPageData {
   title: string;
   subtitle: string;
-  modules: ModuleItem[];
+  modules: BuilderModulePreview[];
 }
 
 const defaultModulesData: ModulesPageData = {
@@ -142,7 +142,7 @@ const defaultModulesData: ModulesPageData = {
   ],
 };
 
-interface LessonItem {
+interface BuilderLessonPreview {
   id: string;
   title: string;
   module: string;
@@ -154,7 +154,7 @@ interface LessonItem {
 interface LessonsPageData {
   title: string;
   subtitle: string;
-  lessons: LessonItem[];
+  lessons: BuilderLessonPreview[];
 }
 
 const defaultLessonsData: LessonsPageData = {
@@ -1342,7 +1342,7 @@ function ModulesPagePreview({
   onEditText?: (config: EditModalConfig) => void;
   onUpdateTitle?: (title: string) => void;
   onUpdateSubtitle?: (subtitle: string) => void;
-  onUpdateModule?: (index: number, updated: Partial<ModuleItem>) => void;
+  onUpdateModule?: (index: number, updated: Partial<BuilderModulePreview>) => void;
 }) {
   const colors = theme.light;
 
@@ -1520,7 +1520,7 @@ function LessonsPagePreview({
   onEditText?: (config: EditModalConfig) => void;
   onUpdateTitle?: (title: string) => void;
   onUpdateSubtitle?: (subtitle: string) => void;
-  onUpdateLesson?: (index: number, updated: Partial<LessonItem>) => void;
+  onUpdateLesson?: (index: number, updated: Partial<BuilderLessonPreview>) => void;
 }) {
   const colors = theme.light;
 
