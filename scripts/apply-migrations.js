@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: '.env.local' });
 
-const projectRef = 'rzmkutmawuajgnditcaq';
+const projectRef = process.env.SUPABASE_PROJECT_REF || 'rzmkutmawuajgnditcaq';
 const token = process.env.SUPABASE_ACCESS_TOKEN;
 
 if (!token) {
