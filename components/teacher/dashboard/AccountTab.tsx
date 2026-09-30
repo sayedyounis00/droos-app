@@ -5,6 +5,7 @@ import { FormInput } from '@/components/ui/FormInput';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Spinner } from '@/components/ui/Spinner';
 import { ProfileSidebar } from './ProfileSidebar';
+import { Icon, IconBadge } from '@/components/ui/Icon';
 
 interface AccountTabProps {
   teacher: TeacherUser | null;
@@ -115,12 +116,14 @@ export function AccountTab({ teacher, onTeacherUpdated }: AccountTabProps) {
                 النطاق الفرعي الخاص بك (Subdomain)
               </label>
               {subdomainLocked ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#D9483D]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#D9483D]">
-                  🔒 تم قفل الرابط (تعديل لمرة واحدة فقط)
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#D9483D]/10 px-3 py-1 text-[11px] font-bold text-[#D9483D] border border-[#D9483D]/20">
+                  <Icon name="lock" size={13} strokeWidth={1.8} />
+                  <span>تم قفل الرابط (تعديل لمرة واحدة فقط)</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#E8A83C]/20 px-2.5 py-0.5 text-[11px] font-bold text-[#9C6B18]">
-                  ✏️ متاح للتعديل لمرة واحدة فقط
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8A83C]/15 px-3 py-1 text-[11px] font-bold text-[#9C6B18] border border-[#E8A83C]/30">
+                  <Icon name="edit" size={13} strokeWidth={1.8} />
+                  <span>متاح للتعديل لمرة واحدة فقط</span>
                 </span>
               )}
             </div>
@@ -145,25 +148,35 @@ export function AccountTab({ teacher, onTeacherUpdated }: AccountTabProps) {
             </div>
 
             {subdomainLocked ? (
-              <p className="text-[11px] font-medium text-[#4A5158] dir-rtl">
-                ⚠️ **الرابط مقفول:** لقد قمت بتعيين رابطك الفرعي مسبقاً. لتقديم طلب تغيير الرابط يرجى التواصل مع الدعم الفني عبر واتساب.
-              </p>
+              <div className="flex items-start gap-2.5 rounded-xl bg-white/70 p-3 border border-[#D3D7DC]/60 text-[11px] font-medium text-[#4A5158] dir-rtl">
+                <IconBadge name="alert-triangle" variant="neutral" size="xs" className="mt-0.5 shrink-0" />
+                <p className="leading-relaxed">
+                  <strong className="font-bold text-[#1C2126]">الرابط مقفول:</strong> لقد قمت بتعيين رابطك الفرعي مسبقاً. لتقديم طلب تغيير الرابط يرجى التواصل مع الدعم الفني عبر واتساب.
+                </p>
+              </div>
             ) : (
-              <p className="text-[11px] font-medium text-[#C88A22] dir-rtl">
-                💡 **تنبيه هام:** يمكنك تغيير وتخصيص رابطك الفرعي **لمرة واحدة فقط**. بمجرد الضغط على &quot;حفظ التعديلات&quot; سيتفعل الرابط ويتم قفله تلقائياً.
-              </p>
+              <div className="flex items-start gap-2.5 rounded-xl bg-[#FDF3E3]/80 p-3 border border-[#F3C97C]/60 text-[11px] font-medium text-[#9C6B18] dir-rtl">
+                <IconBadge name="lightbulb" variant="accent" size="xs" className="mt-0.5 shrink-0" />
+                <p className="leading-relaxed">
+                  <strong className="font-bold text-[#9C6B18]">تنبيه هام:</strong> يمكنك تغيير وتخصيص رابطك الفرعي <strong className="font-black text-[#C88A22]">لمرة واحدة فقط</strong>. بمجرد الضغط على &quot;حفظ التعديلات&quot; سيتفعل الرابط ويتم قفله تلقائياً.
+                </p>
+              </div>
             )}
 
             {subdomain && (
               <div className="pt-2 border-t border-[#CFE6E6]/60 flex items-center justify-between text-xs dir-rtl">
-                <span className="text-[#0F4E4F] font-bold">معاينة الرابط الخاص بك:</span>
+                <span className="flex items-center gap-1.5 text-[#0F4E4F] font-bold">
+                  <Icon name="link" size={14} className="text-[#1F7A7B]" />
+                  <span>معاينة الرابط الخاص بك:</span>
+                </span>
                 <a
                   href={`https://${subdomain}.droos.app`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-bold text-[#1F7A7B] underline hover:text-[#166465] dir-ltr"
+                  className="inline-flex items-center gap-1.5 font-bold text-[#1F7A7B] underline hover:text-[#166465] dir-ltr"
                 >
-                  https://{subdomain}.droos.app
+                  <span>https://{subdomain}.droos.app</span>
+                  <Icon name="external-link" size={12} />
                 </a>
               </div>
             )}

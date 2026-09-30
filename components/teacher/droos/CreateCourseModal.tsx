@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import GradeLevelSelector from '@/components/teacher/GradeLevelSelector';
+import { Icon } from '@/components/ui/Icon';
 
 interface CreateCourseModalProps {
   isOpen: boolean;
@@ -49,8 +50,8 @@ export function CreateCourseModal({
       <div className="w-full max-w-lg rounded-3xl bg-white p-6 sm:p-8 shadow-2xl space-y-6">
         <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-4">
           <h3 className="text-lg font-bold text-[#1C2126]">إضافة دورة تعليمية جديدة</h3>
-          <button onClick={handleClose} className="text-[#8A929B] hover:text-[#1C2126]">
-            ✕
+          <button onClick={handleClose} className="p-1.5 rounded-lg text-[#8A929B] hover:text-[#1C2126] hover:bg-[#F7F8F9] transition-colors" title="إغلاق">
+            <Icon name="x" size={18} strokeWidth={2} />
           </button>
         </div>
 

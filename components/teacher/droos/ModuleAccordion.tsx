@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ModuleItem } from '@/lib/droos-data';
 import { LessonRow } from './LessonRow';
+import { Icon } from '@/components/ui/Icon';
 
 interface ModuleAccordionProps {
   moduleItem: ModuleItem;
@@ -115,8 +116,8 @@ export function ModuleAccordion({
             </form>
           ) : (
             <div className="flex items-center gap-2.5">
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#EAF4F4] text-xs font-black text-[#1F7A7B]">
-                📚
+              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#EAF4F4] text-[#1F7A7B] border border-[#CFE6E6]">
+                <Icon name="book-open" size={13} strokeWidth={1.8} />
               </span>
               <span
                 onClick={onToggleExpand}
@@ -178,9 +179,10 @@ export function ModuleAccordion({
                 <button
                   type="button"
                   onClick={() => setIsAddingLesson(false)}
-                  className="text-xs text-[#8A929B] hover:text-[#1C2126]"
+                  className="inline-flex items-center gap-1 text-xs text-[#8A929B] hover:text-[#1C2126]"
                 >
-                  ✕ إلغاء
+                  <Icon name="x" size={13} strokeWidth={2} />
+                  <span>إلغاء</span>
                 </button>
               </div>
 

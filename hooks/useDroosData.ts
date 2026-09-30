@@ -179,7 +179,7 @@ export function useDroosData(initialTeacherId?: string) {
   const deleteCourse = async (courseId: string): Promise<void> => {
     if (
       !confirm(
-        'هل أنت متأكد من رغبتك في حذف هذه الدورة التعليمية وكافة الدروس والحصص التابعة لها؟\n\n⚠️ هذا الإجراء لا يمكن التراجع عنه.'
+        'هل أنت متأكد من رغبتك في حذف هذه الدورة التعليمية وكافة الدروس والحصص التابعة لها؟\n\nتنبيه: هذا الإجراء لا يمكن التراجع عنه.'
       )
     )
       return;

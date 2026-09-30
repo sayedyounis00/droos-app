@@ -9,6 +9,7 @@ import {
 } from "@/lib/themes";
 import { TeacherUser } from "@/lib/auth/teacher-auth";
 import { CourseItem } from "@/lib/droos-data";
+import { Icon, IconBadge, IconName } from "@/components/ui/Icon";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -120,11 +121,11 @@ function getYouTubeEmbedUrl(url?: string | null): string | null {
 // ─── Section Icons ────────────────────────────────────────────────────────────
 
 const sections = [
-  { id: "hero", label: "القسم الرئيسي", icon: "🏠" },
-  { id: "about", label: "نبذة عني", icon: "👤" },
-  { id: "courses", label: "السنوات الدراسية", icon: "🎓" },
-  { id: "testimonials", label: "آراء الطلاب", icon: "💬" },
-  { id: "contact", label: "التواصل", icon: "📞" },
+  { id: "hero", label: "القسم الرئيسي", icon: "home" as IconName },
+  { id: "about", label: "نبذة عني", icon: "user" as IconName },
+  { id: "courses", label: "السنوات الدراسية", icon: "graduation-cap" as IconName },
+  { id: "testimonials", label: "آراء الطلاب", icon: "message-square" as IconName },
+  { id: "contact", label: "التواصل", icon: "phone" as IconName },
 ] as const;
 
 type SectionId = (typeof sections)[number]["id"];
@@ -157,7 +158,7 @@ const defaultModulesData: ModulesPageData = {
       description: "شرح كامل لمفاهيم الأعداد المركبة، المحددات، والمصفوفات والهندسة الثلاثية الأبعاد.",
       lessonsCount: 14,
       duration: "18 ساعة",
-      badge: "الأكثر طلباً ⭐",
+      badge: "الأكثر طلباً",
       progress: 65,
     },
     {
@@ -166,7 +167,7 @@ const defaultModulesData: ModulesPageData = {
       description: "تطبيقات النوايات، المشتقات العليا، والتكاملات المحددة وغير المحددة خطوة بخطوة.",
       lessonsCount: 18,
       duration: "22 ساعة",
-      badge: "جديد 🚀",
+      badge: "جديد",
       progress: 40,
     },
     {
@@ -175,7 +176,7 @@ const defaultModulesData: ModulesPageData = {
       description: "تحليل القوى، الاتزان العام، وقوانين نيوتن في الحركة مع حل مسائل الامتحانات الوطنية.",
       lessonsCount: 12,
       duration: "15 ساعة",
-      badge: "مراجعة شاملة 📝",
+      badge: "مراجعة شاملة",
       progress: 90,
     },
   ],
@@ -226,10 +227,10 @@ const defaultLessonDetailData: LessonDetailData = {
 };
 
 const pages = [
-  { id: "home", label: "الصفحة الرئيسية", icon: "🏠", subtitle: "واجهة الهبوط العامة" },
-  { id: "modules", label: "جميع الكورسات والوحدات", icon: "📚", subtitle: "فهرس الكورسات والوحدات الدراسية" },
-  { id: "lessons", label: "جميع الدروس والتمارين", icon: "🎬", subtitle: "مكتبة الدروس المتاحة للطلاب" },
-  { id: "lesson-detail", label: "معاينة الدرس ومشغل الفيديو", icon: "📺", subtitle: "شاشة مشاهدة الدرس والملحقات" },
+  { id: "home", label: "الصفحة الرئيسية", icon: "home" as IconName, subtitle: "واجهة الهبوط العامة" },
+  { id: "modules", label: "جميع الكورسات والوحدات", icon: "book-open" as IconName, subtitle: "فهرس الكورسات والوحدات الدراسية" },
+  { id: "lessons", label: "جميع الدروس والتمارين", icon: "play" as IconName, subtitle: "مكتبة الدروس المتاحة للطلاب" },
+  { id: "lesson-detail", label: "معاينة الدرس ومشغل الفيديو", icon: "tv" as IconName, subtitle: "شاشة مشاهدة الدرس والملحقات" },
 ] as const;
 
 type PageId = (typeof pages)[number]["id"];
@@ -517,16 +518,16 @@ export default function HomePageBuilder({
         });
         const json = await res.json();
         if (json.success) {
-          setSaveMessage("تم حفظ الصفحة وإعدادات المنصة في قاعدة البيانات بنجاح ✅");
+          setSaveMessage("تم حفظ الصفحة وإعدادات المنصة في قاعدة البيانات بنجاح");
         } else {
-          setSaveMessage("تم الحفظ محلياً (حدث خطأ في مزامنة قاعدة البيانات) ⚠️");
+          setSaveMessage("تم الحفظ محلياً (حدث خطأ في مزامنة قاعدة البيانات)");
         }
       } else {
-        setSaveMessage("تم حفظ التعديلات محلياً بنجاح ✅");
+        setSaveMessage("تم حفظ التعديلات محلياً بنجاح");
       }
     } catch (err) {
       console.error("Failed to save homepage:", err);
-      setSaveMessage("تم الحفظ محلياً (تعذر الاتصال بالخادم) ⚠️");
+      setSaveMessage("تم الحفظ محلياً (تعذر الاتصال بالخادم)");
     } finally {
       setIsSaving(false);
       setSaved(true);
@@ -722,7 +723,7 @@ export default function HomePageBuilder({
                   }`}
                   title={p.subtitle}
                 >
-                  <span className="text-sm">{p.icon}</span>
+                  <Icon name={p.icon} size={14} strokeWidth={1.8} />
                   <span>{p.label}</span>
                 </button>
               );
@@ -738,7 +739,7 @@ export default function HomePageBuilder({
                 onClick={() => setShowThemePicker(!showThemePicker)}
                 className="flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 py-2 px-3 text-xs font-bold transition-all shadow-inner"
               >
-                <span className="text-sm">🎨</span>
+                <Icon name="palette" size={15} strokeWidth={1.8} className="text-[#F3C97C]" />
                 <div className="flex items-center gap-1.5">
                   <span className="text-white/70 text-[11px] hidden xs:inline">الثيم:</span>
                   <span className="font-bold text-[#F3C97C]">{currentTheme.nameAr}</span>
@@ -761,7 +762,8 @@ export default function HomePageBuilder({
                   <div className="absolute left-0 sm:right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white text-[#1C2126] shadow-2xl border border-[#EEF0F2] p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
                     <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-2.5 mb-2.5 px-1">
                       <span className="text-xs font-black text-[#0F4E4F] flex items-center gap-1.5">
-                        <span>🎨</span> اختر هُوية المنصة (4 ثيمات مخصصة)
+                        <Icon name="palette" size={15} strokeWidth={1.8} className="text-[#1F7A7B]" />
+                        <span>اختر هُوية المنصة (4 ثيمات مخصصة)</span>
                       </span>
                       <span className="text-[10px] text-[#8A929B]">تحدث فوراً في المعاينة</span>
                     </div>
@@ -873,8 +875,14 @@ export default function HomePageBuilder({
 
         {/* Global Save Feedback Toast Notification */}
         {saveMessage && (
-          <div className="bg-[#0A3536] border-t border-white/10 px-4 py-2 text-center text-xs font-bold text-[#F3C97C] animate-in slide-in-from-top-1 duration-200">
-            {saveMessage}
+          <div className="bg-[#0A3536] border-t border-white/10 px-4 py-2 text-center text-xs font-bold text-[#F3C97C] animate-in slide-in-from-top-1 duration-200 flex items-center justify-center gap-2">
+            <Icon
+              name={saveMessage.includes("خطأ") || saveMessage.includes("تعذر") ? "alert-triangle" : "check-circle"}
+              size={14}
+              strokeWidth={2}
+              className="text-[#F3C97C]"
+            />
+            <span>{saveMessage}</span>
           </div>
         )}
       </header>
@@ -885,9 +893,7 @@ export default function HomePageBuilder({
           <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-[#EEF0F2] transition-all transform scale-100">
             <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-4 mb-4">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#EAF4F4] text-lg text-[#1F7A7B]">
-                  ✏️
-                </span>
+                <IconBadge name="pencil" variant="primary" size="md" />
                 <div>
                   <h3 className="text-base font-black text-[#1C2126]">{editModal.title}</h3>
                   <p className="text-xs text-[#8A929B]">{editModal.label}</p>
@@ -896,8 +902,9 @@ export default function HomePageBuilder({
               <button
                 onClick={() => setEditModal(null)}
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F8F9] text-[#8A929B] hover:bg-[#EEF0F2] hover:text-[#1C2126] transition-colors"
+                title="إغلاق"
               >
-                ✕
+                <Icon name="x" size={16} strokeWidth={2} />
               </button>
             </div>
 
@@ -941,8 +948,8 @@ export default function HomePageBuilder({
                 }}
                 className="flex items-center gap-2 rounded-xl bg-[#1F7A7B] hover:bg-[#166465] text-white px-6 py-2.5 text-xs font-black shadow-md transition-all active:scale-95"
               >
+                <Icon name="check" size={14} strokeWidth={2} />
                 <span>حفظ التعديل</span>
-                <span>✨</span>
               </button>
             </div>
           </div>
@@ -955,15 +962,15 @@ export default function HomePageBuilder({
           {/* Top Banner allowing quick return to split editing mode */}
           <div className="bg-[#0A3536] text-white px-4 py-2.5 text-xs font-bold flex items-center justify-between shadow-md flex-shrink-0">
             <div className="flex items-center gap-2">
-              <span className="text-base">👁️</span>
+              <Icon name="eye" size={16} strokeWidth={1.8} className="text-[#F3C97C]" />
               <span>أنت الآن في وضع ملء الشاشة لصفحة: <strong className="text-[#F3C97C]">({currentPage.label})</strong></span>
             </div>
             <button
               onClick={() => setPreviewMode(false)}
               className="px-3.5 py-1.5 rounded-xl bg-[#E8A83C] text-[#0F4E4F] font-black text-xs hover:bg-[#F3C97C] transition-all shadow-sm active:scale-95 flex items-center gap-1.5"
             >
+              <Icon name="edit" size={13} strokeWidth={2} />
               <span>العودة للتعديل والمشاهدة الجانبية</span>
-              <span>✏️</span>
             </button>
           </div>
 
@@ -979,23 +986,25 @@ export default function HomePageBuilder({
           <div className="lg:hidden bg-white border-b border-[#EEF0F2] p-2 flex items-center justify-center gap-2 shadow-xs flex-shrink-0">
             <button
               onClick={() => setMobileEditorTab("editor")}
-              className={`flex-1 py-2 text-xs font-black rounded-xl text-center transition-all ${
+              className={`flex-1 py-2 px-3 text-xs font-black rounded-xl text-center transition-all inline-flex items-center justify-center gap-1.5 ${
                 mobileEditorTab === "editor"
                   ? "bg-[#1F7A7B] text-white shadow-sm"
                   : "bg-[#F7F8F9] text-[#4A5158] hover:bg-[#EEF0F2]"
               }`}
             >
-              ✏️ نموذج التعديل ({currentPage.label})
+              <Icon name="pencil" size={13} strokeWidth={1.8} />
+              <span>نموذج التعديل ({currentPage.label})</span>
             </button>
             <button
               onClick={() => setMobileEditorTab("preview")}
-              className={`flex-1 py-2 text-xs font-black rounded-xl text-center transition-all ${
+              className={`flex-1 py-2 px-3 text-xs font-black rounded-xl text-center transition-all inline-flex items-center justify-center gap-1.5 ${
                 mobileEditorTab === "preview"
                   ? "bg-[#1F7A7B] text-white shadow-sm"
                   : "bg-[#F7F8F9] text-[#4A5158] hover:bg-[#EEF0F2]"
               }`}
             >
-              👁️ معاينة الصفحة الحية
+              <Icon name="eye" size={13} strokeWidth={1.8} />
+              <span>معاينة الصفحة الحية</span>
             </button>
           </div>
 
@@ -1026,7 +1035,7 @@ export default function HomePageBuilder({
                               : "text-[#4A5158] hover:bg-[#F7F8F9]"
                           }`}
                         >
-                          <span className="text-base">{sec.icon}</span>
+                          <Icon name={sec.icon as IconName} size={15} strokeWidth={1.8} />
                           <span>{sec.label}</span>
                         </button>
                       ))}
@@ -1098,13 +1107,16 @@ export default function HomePageBuilder({
               {/* Preview Bar Header */}
               <div className="bg-white border-b border-[#EEF0F2] px-4 py-3 flex items-center justify-between shadow-xs flex-shrink-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">{currentPage.icon}</span>
+                  <Icon name={currentPage.icon as IconName} size={16} strokeWidth={1.8} className="text-[#1F7A7B]" />
                   <span className="text-xs font-black text-[#1C2126]">
                     معاينة الصفحة الحية: {currentPage.label}
                   </span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#2E9E5B]/10 text-[#2E9E5B] flex items-center gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#2E9E5B] animate-pulse" />
-                    تحديث فوري ⚡
+                    <span className="inline-flex items-center gap-1">
+                      <span>تحديث فوري</span>
+                      <Icon name="zap" size={11} strokeWidth={2} />
+                    </span>
                   </span>
                 </div>
 
@@ -1118,7 +1130,7 @@ export default function HomePageBuilder({
                     title="تكبير المعاينة ملء الشاشة"
                   >
                     <span>ملء الشاشة</span>
-                    <span>↗</span>
+                    <Icon name="external-link" size={12} strokeWidth={2} />
                   </button>
                 </div>
               </div>
@@ -1140,11 +1152,25 @@ export default function HomePageBuilder({
 
 // ─── Section Editors ──────────────────────────────────────────────────────────
 
-function EditorCard({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+function EditorCard({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: IconName | React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div className="max-w-2xl">
       <div className="mb-6 flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF4F4] text-xl">{icon}</span>
+        {typeof icon === "string" ? (
+          <IconBadge name={icon as IconName} variant="primary" size="md" />
+        ) : (
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF4F4] text-[#1F7A7B] border border-[#CFE6E6]">
+            {icon}
+          </span>
+        )}
         <div>
           <h2 className="text-lg font-black text-[#1C2126]">{title}</h2>
           <p className="text-xs text-[#8A929B]">عدّل المحتوى وشاهد التغيير في المعاينة مباشرة</p>
@@ -1175,7 +1201,7 @@ function InputField({
 
 function HeroEditor({ data, onChange }: { data: HeroSection; onChange: (d: HeroSection) => void }) {
   return (
-    <EditorCard title="القسم الرئيسي (Hero)" icon="🏠">
+    <EditorCard title="القسم الرئيسي (Hero)" icon="home">
       <InputField label="الشارة التعريفية (Badge)" value={data.badge} onChange={(v) => onChange({ ...data, badge: v })} placeholder="نتائج مضمونة..." />
       <InputField label="العنوان الرئيسي" value={data.headline} onChange={(v) => onChange({ ...data, headline: v })} placeholder="تعلّم بطريقة مختلفة..." />
       <InputField label="النص التوضيحي" value={data.subheadline} onChange={(v) => onChange({ ...data, subheadline: v })} placeholder="وصف مختصر..." multiline />
@@ -1186,7 +1212,7 @@ function HeroEditor({ data, onChange }: { data: HeroSection; onChange: (d: HeroS
 
 function AboutEditor({ data, onChange }: { data: AboutSection; onChange: (d: AboutSection) => void }) {
   return (
-    <EditorCard title="نبذة عني (About)" icon="👤">
+    <EditorCard title="نبذة عني (About)" icon="user">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <InputField label="اسمك الكامل" value={data.name} onChange={(v) => onChange({ ...data, name: v })} placeholder="أحمد سعد" />
         <InputField label="المادة التخصصية" value={data.subject} onChange={(v) => onChange({ ...data, subject: v })} placeholder="الرياضيات" />
@@ -1199,10 +1225,11 @@ function AboutEditor({ data, onChange }: { data: AboutSection; onChange: (d: Abo
 
 function TeachingYearsEditor({ grades }: { grades: string[] }) {
   return (
-    <EditorCard title="السنوات والصفوف الدراسية (قسم ثابت)" icon="🎓">
+    <EditorCard title="السنوات والصفوف الدراسية (قسم ثابت)" icon="graduation-cap">
       <div className="rounded-2xl border border-[#CFE6E6] bg-[#EAF4F4]/60 p-5 space-y-4">
         <div className="flex items-center gap-2 text-[#0F4E4F] font-bold text-sm">
-          <span>🔒 هذا القسم ثابت ومربوط ببيانات الحساب</span>
+          <Icon name="lock" size={14} className="text-[#1F7A7B]" />
+          <span>هذا القسم ثابت ومربوط ببيانات الحساب</span>
         </div>
         <p className="text-xs text-[#4A5158] leading-relaxed">
           يتم عرض السنوات والصفوف الدراسية الخاصة بالمعلم تلقائياً من بيانات الحساب، ولا يمكن تعديل الدروس أو الكورسات الفردية من هنا.
@@ -1212,7 +1239,7 @@ function TeachingYearsEditor({ grades }: { grades: string[] }) {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {grades.map((grade, idx) => (
               <div key={idx} className="flex items-center gap-2.5 rounded-xl bg-white border border-[#7EB8B9] p-3 text-xs font-bold text-[#1F7A7B] shadow-sm">
-                <span className="text-base">🎓</span>
+                <Icon name="graduation-cap" size={16} strokeWidth={1.8} className="text-[#1F7A7B]" />
                 <span>{grade}</span>
               </div>
             ))}
@@ -1230,7 +1257,7 @@ function TestimonialsEditor({ data, onChange }: { data: TestimonialsSection; onC
   };
 
   return (
-    <EditorCard title="آراء الطلاب" icon="💬">
+    <EditorCard title="آراء الطلاب" icon="message-square">
       <InputField label="عنوان القسم" value={data.title} onChange={(v) => onChange({ ...data, title: v })} />
       <div className="space-y-4">
         {data.testimonials.map((t, idx) => (
@@ -1253,7 +1280,7 @@ function TestimonialsEditor({ data, onChange }: { data: TestimonialsSection; onC
 
 function ContactEditor({ data, onChange }: { data: ContactSection; onChange: (d: ContactSection) => void }) {
   return (
-    <EditorCard title="معلومات التواصل" icon="📞">
+    <EditorCard title="معلومات التواصل" icon="phone">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <InputField label="رقم الهاتف" value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="01143825523" />
         <InputField label="رقم واتساب" value={data.whatsapp} onChange={(v) => onChange({ ...data, whatsapp: v })} placeholder="01143825523" />
@@ -1279,16 +1306,17 @@ function ModulesEditor({
   modulesCount: number;
 }) {
   return (
-    <EditorCard title="صفحة الكورسات والوحدات الدراسية" icon="📚">
+    <EditorCard title="صفحة الكورسات والوحدات الدراسية" icon="book-open">
       <div className="rounded-2xl border border-[#CFE6E6] bg-[#EAF4F4]/70 p-4 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2">
-          <span className="text-base">⚡</span>
+          <Icon name="zap" size={14} className="text-[#1F7A7B]" />
           <span className="font-bold text-[#0F4E4F]">
             مربوط بقاعدة البيانات: تم جلب {coursesCount} كورس و {modulesCount} وحدة دراسية
           </span>
         </div>
-        <span className="text-[10px] bg-white text-[#1F7A7B] font-black px-2.5 py-1 rounded-full border border-[#7EB8B9] self-start sm:self-auto">
-          بيانات فعلية ✓
+        <span className="text-[10px] bg-white text-[#1F7A7B] font-black px-2.5 py-1 rounded-full border border-[#7EB8B9] self-start sm:self-auto inline-flex items-center gap-1">
+          <span>بيانات فعلية</span>
+          <Icon name="check" size={11} strokeWidth={2.5} />
         </span>
       </div>
 
@@ -1323,16 +1351,17 @@ function LessonsEditor({
   lessonsCount: number;
 }) {
   return (
-    <EditorCard title="صفحة مكتبة الدروس والتمارين" icon="🎬">
+    <EditorCard title="صفحة مكتبة الدروس والتمارين" icon="play">
       <div className="rounded-2xl border border-[#CFE6E6] bg-[#EAF4F4]/70 p-4 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2">
-          <span className="text-base">⚡</span>
+          <Icon name="zap" size={14} className="text-[#1F7A7B]" />
           <span className="font-bold text-[#0F4E4F]">
             مربوط بقاعدة البيانات: تم جلب {lessonsCount} درس وحصة تعليمية
           </span>
         </div>
-        <span className="text-[10px] bg-white text-[#1F7A7B] font-black px-2.5 py-1 rounded-full border border-[#7EB8B9] self-start sm:self-auto">
-          بيانات فعلية ✓
+        <span className="text-[10px] bg-white text-[#1F7A7B] font-black px-2.5 py-1 rounded-full border border-[#7EB8B9] self-start sm:self-auto inline-flex items-center gap-1">
+          <span>بيانات فعلية</span>
+          <Icon name="check" size={11} strokeWidth={2.5} />
         </span>
       </div>
 
@@ -1367,7 +1396,7 @@ function LessonDetailEditor({
   onSelectLesson: (id: string) => void;
 }) {
   return (
-    <EditorCard title="صفحة مشاهدة الدرس ومشغل الفيديو" icon="📺">
+    <EditorCard title="صفحة مشاهدة الدرس ومشغل الفيديو" icon="tv">
       {/* Lesson Selector */}
       {lessons.length > 0 && (
         <div className="mb-5 bg-white p-4 rounded-2xl border border-[#EEF0F2] shadow-xs">
@@ -1409,7 +1438,7 @@ function LessonDetailEditor({
         multiline
       />
       <InputField
-        label="💡 ملاحظة وتوجيهات المعلم للطلاب"
+        label="ملاحظة وتوجيهات المعلم للطلاب"
         value={data.teacherNote}
         onChange={(v) => onChange({ teacherNote: v })}
         placeholder="تأكد من مراجعة التمارين التطبيقية..."
@@ -1482,7 +1511,8 @@ function EditableWrapper({
     >
       {children !== undefined ? children : value}
       <span className="opacity-0 group-hover/editable:opacity-100 transition-all inline-flex items-center gap-1 text-[10px] font-black bg-[#E8A83C] text-[#0F4E4F] px-2 py-0.5 rounded-full shadow-lg mr-2 align-middle border border-white/40">
-        ✏️ تعديل
+        <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        تعديل
       </span>
     </Component>
   );
@@ -1746,7 +1776,7 @@ function PreviewPage({
                     borderRadius: theme.radius.cardCss,
                   }}
                 >
-                  🎓
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                 </div>
 
                 <h3 className="text-base font-bold mb-2" style={{ color: colors.textPrimary }}>
@@ -1840,8 +1870,9 @@ function PreviewPage({
                           {course.grade_levels?.name_ar || "المرحلة الثانوية"}
                         </span>
 
-                        <span className="text-[11px] font-bold" style={{ color: colors.textSecondary }}>
-                          📚 {modulesCount} وحدات • {lessonsCount} حصة
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold" style={{ color: colors.textSecondary }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                          {modulesCount} وحدات • {lessonsCount} حصة
                         </span>
                       </div>
 
@@ -1908,8 +1939,8 @@ function PreviewPage({
                   boxShadow: theme.shadow.card,
                 }}
               >
-                <div className="text-xl mb-3" style={{ color: colors.accent }}>
-                  ❝
+                <div className="mb-3" style={{ color: colors.accent }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
                 </div>
 
                 <EditableWrapper
@@ -2073,7 +2104,7 @@ function ModulesPagePreview({
       )}
       {!isLiveData && (
         <div className="bg-[#E0A429] text-[#1C2126] px-4 py-2 text-xs font-bold flex items-center justify-center gap-2">
-          <span>⚠️</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <span>بيانات تجريبية — أضف كورسات ودروس من تبويب "إدارة الدروس" لتظهر هنا بيانات حقيقية</span>
         </div>
       )}
@@ -2114,7 +2145,9 @@ function ModulesPagePreview({
                 color: colors.textPrimary,
               }}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[#8A929B]">🔍</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A929B]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </span>
           </div>
         </div>
       </section>
@@ -2123,7 +2156,9 @@ function ModulesPagePreview({
       <section className="mx-auto max-w-5xl px-6 py-12">
         {data.modules.length === 0 ? (
           <div className="text-center py-20 px-6 rounded-3xl border-2 border-dashed border-[#D3D7DC] bg-[#F7F8F9] max-w-xl mx-auto">
-            <span className="text-4xl mb-3 block">📚</span>
+            <div className="flex justify-center mb-4 text-[#D3D7DC]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
             <h3 className="text-base font-black text-[#1C2126] mb-1">لم يتم إضافة وحدات دراسية بعد</h3>
             <p className="text-xs text-[#8A929B] leading-relaxed">
               أضف دورات ووحدات جديدة من قسم "إدارة الدروس" في لوحة التحكم، وستظهر فوراً هنا لطلابك في المنصة.
@@ -2155,8 +2190,12 @@ function ModulesPagePreview({
                       {m.badge}
                     </span>
 
-                    <span className="text-[10px] font-bold" style={{ color: colors.textSecondary }}>
-                      ⏱️ {m.duration}
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold" style={{ color: colors.textSecondary }}>
+                      <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span>{m.duration}</span>
                     </span>
                   </div>
 
@@ -2251,7 +2290,7 @@ function LessonsPagePreview({
       )}
       {!isLiveData && (
         <div className="bg-[#E0A429] text-[#1C2126] px-4 py-2 text-xs font-bold flex items-center justify-center gap-2">
-          <span>⚠️</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <span>بيانات تجريبية — أضف حصص ودروس من تبويب "إدارة الدروس" لتظهر هنا بيانات حقيقية</span>
         </div>
       )}
@@ -2293,13 +2332,15 @@ function LessonsPagePreview({
                 color: colors.textPrimary,
               }}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[#8A929B]">🔍</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A929B]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </span>
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-xs text-[#8A929B] hover:text-[#1C2126]"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A929B] hover:text-[#1C2126]"
               >
-                ✕
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
               </button>
             )}
           </div>
@@ -2310,7 +2351,9 @@ function LessonsPagePreview({
       <section className="mx-auto max-w-4xl px-6 py-10">
         {filteredLessons.length === 0 ? (
           <div className="text-center py-20 px-6 rounded-3xl border-2 border-dashed border-[#D3D7DC] bg-[#F7F8F9] max-w-xl mx-auto">
-            <span className="text-4xl mb-3 block">🎬</span>
+            <div className="flex justify-center mb-4 text-[#D3D7DC]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            </div>
             <h3 className="text-base font-black text-[#1C2126] mb-1">لا توجد دروس مطابقة</h3>
             <p className="text-xs text-[#8A929B] leading-relaxed">
               {searchQuery ? "جرّب البحث بكلمة أخرى أو تصفح باقي الدروس." : "أضف حصص ودروس جديدة من تبويب إدارة الدروس لتظهر هنا."}
@@ -2351,7 +2394,17 @@ function LessonsPagePreview({
                           borderRadius: "9999px",
                         }}
                       >
-                        {l.isFree ? "✨ درس مجاني" : "🔒 مشتركين"}
+                        {l.isFree ? (
+                          <span className="inline-flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+                            درس مجاني
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            مشتركين
+                          </span>
+                        )}
                       </span>
                       <span
                         className="text-[10px] font-bold"
@@ -2373,10 +2426,11 @@ function LessonsPagePreview({
 
                 <div className="flex items-center gap-4 self-end sm:self-auto">
                   <span
-                    className="text-xs font-bold"
+                    className="inline-flex items-center gap-1 text-xs font-bold"
                     style={{ color: colors.textSecondary }}
                   >
-                    ⏱️ {l.duration}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {l.duration}
                   </span>
 
                   <button
@@ -2453,10 +2507,16 @@ function LessonDetailPreview({
             onEditText={onEditText}
             onSave={(v) => onUpdateDetail?.({ moduleName: v })}
           >
-            <span>📚 {data.moduleName}</span>
+            <span className="inline-flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              {data.moduleName}
+            </span>
           </EditableWrapper>
 
-          <span className="text-[10px] text-white/70">مشغّل فيديو دُرُوس التفاعلي 🎬</span>
+          <span className="inline-flex items-center gap-1.5 text-[10px] text-white/70">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            مشغّل فيديو دُرُوس التفاعلي
+          </span>
         </div>
       </div>
 
@@ -2488,9 +2548,19 @@ function LessonDetailPreview({
 
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
-                className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8A83C] text-[#0F4E4F] text-2xl font-black shadow-2xl transition-transform hover:scale-110 active:scale-95"
+                className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8A83C] text-[#0F4E4F] shadow-2xl transition-transform hover:scale-110 active:scale-95"
+                title={isPlaying ? "إيقاف مؤقت" : "تشغيل الفيديو"}
               >
-                {isPlaying ? "⏸" : "▶"}
+                {isPlaying ? (
+                  <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                    <rect x="6" y="5" width="4" height="14" rx="1.5" />
+                    <rect x="14" y="5" width="4" height="14" rx="1.5" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 fill-current translate-x-[-1px]" viewBox="0 0 24 24">
+                    <polygon points="6 4 20 12 6 20 6 4" />
+                  </svg>
+                )}
               </button>
 
               <div className="absolute bottom-4 right-4 left-4 z-10 flex items-center justify-between text-white text-xs font-bold">
@@ -2523,23 +2593,25 @@ function LessonDetailPreview({
             <div className="flex items-center gap-2 border-b border-[#EEF0F2] pb-3 mb-4">
               <button
                 onClick={() => setActiveTab("overview")}
-                className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
+                className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black rounded-xl transition-all ${
                   activeTab === "overview"
                     ? "bg-[#EAF4F4] text-[#1F7A7B]"
                     : "text-[#4A5158] hover:bg-[#F7F8F9]"
                 }`}
               >
-                📄 الوصف والملاحظات
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                الوصف والملاحظات
               </button>
               <button
                 onClick={() => setActiveTab("pdf")}
-                className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
+                className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black rounded-xl transition-all ${
                   activeTab === "pdf"
                     ? "bg-[#EAF4F4] text-[#1F7A7B]"
                     : "text-[#4A5158] hover:bg-[#F7F8F9]"
                 }`}
               >
-                📎 ملحقات PDF والتمارين
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l7.9-7.9"/></svg>
+                ملحقات PDF والتمارين
               </button>
             </div>
 
@@ -2560,7 +2632,10 @@ function LessonDetailPreview({
                 <div
                   className="p-4 rounded-xl border border-[#CFE6E6] bg-[#EAF4F4]/50"
                 >
-                  <span className="block text-xs font-black text-[#0F4E4F] mb-1">💡 ملاحظة المعلم للطلاب:</span>
+                  <span className="flex items-center gap-1.5 text-xs font-black text-[#0F4E4F] mb-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                    ملاحظة المعلم للطلاب:
+                  </span>
                   <EditableWrapper
                     value={data.teacherNote}
                     label="ملاحظة المعلم"
@@ -2577,7 +2652,9 @@ function LessonDetailPreview({
             {activeTab === "pdf" && (
               <div className="p-4 rounded-xl border border-[#D3D7DC] bg-[#F7F8F9] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">📄</span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EAF4F4] text-[#1F7A7B]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  </div>
                   <EditableWrapper
                     value={data.pdfTitle}
                     label="عنوان ملف PDF الملحق"
@@ -2608,14 +2685,15 @@ function LessonDetailPreview({
         >
           <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-3">
             <h3
-              className="text-sm font-black"
+              className="inline-flex items-center gap-1.5 text-sm font-black"
               style={{ color: colors.textPrimary }}
             >
-              📋 قائمة دروس الوحدة ({playlistLessons.length > 0 ? playlistLessons.length : 6} دروس)
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              قائمة دروس الوحدة ({playlistLessons.length > 0 ? playlistLessons.length : 6} دروس)
             </h3>
             {playlistLessons.length > 0 && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EAF4F4] text-[#1F7A7B]">
-                تفاعلية ✨
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EAF4F4] text-[#1F7A7B]">
+                تفاعلية
               </span>
             )}
           </div>
@@ -2635,7 +2713,13 @@ function LessonDetailPreview({
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-xs">{isActive ? "🟢" : "▶️"}</span>
+                      {isActive ? (
+                        <span className="flex h-2 w-2 rounded-full bg-[#2E9E5B] flex-shrink-0" />
+                      ) : (
+                        <svg className="w-3.5 h-3.5 text-[#8A929B] flex-shrink-0 fill-current" viewBox="0 0 24 24">
+                          <polygon points="6 4 19 12 6 20 6 4" />
+                        </svg>
+                      )}
                       <span className="line-clamp-1">{idx + 1}. {item.title}</span>
                     </div>
                     <span className="text-[10px] opacity-75">
@@ -2647,7 +2731,7 @@ function LessonDetailPreview({
             ) : (
               <>
                 <div className="p-3 rounded-xl bg-[#EAF4F4] text-[#1F7A7B] font-bold border border-[#CFE6E6] flex items-center justify-between">
-                  <span>1. مقدمة الأعداد المركبة 🟢</span>
+                  <span className="inline-flex items-center gap-2"><span className="flex h-2 w-2 rounded-full bg-[#2E9E5B] flex-shrink-0" />1. مقدمة الأعداد المركبة</span>
                   <span className="text-[10px]">نشط الآن</span>
                 </div>
                 <div className="p-3 rounded-xl hover:bg-[#F7F8F9] text-[#4A5158] font-medium flex items-center justify-between">
@@ -2659,7 +2743,7 @@ function LessonDetailPreview({
                   <span className="text-[10px]">45 د</span>
                 </div>
                 <div className="p-3 rounded-xl hover:bg-[#F7F8F9] text-[#4A5158] font-medium flex items-center justify-between opacity-60">
-                  <span>4. الجذور التكعيبية للواحد الصحيح 🔒</span>
+                  <span className="inline-flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>4. الجذور التكعيبية للواحد الصحيح</span>
                   <span className="text-[10px]">مشتركين</span>
                 </div>
               </>

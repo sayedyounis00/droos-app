@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LessonItem } from '@/lib/droos-data';
+import { Icon } from '@/components/ui/Icon';
 
 interface LessonRowProps {
   lesson: LessonItem;
@@ -111,8 +112,9 @@ export function LessonRow({
               <h6 className="text-base sm:text-lg font-bold text-[#1C2126] leading-snug">
                 {lesson.title}
               </h6>
-              <span className="rounded-lg bg-[#EAF4F4] px-2.5 py-0.5 text-xs font-bold text-[#1F7A7B]">
-                🎥 فيديو
+              <span className="inline-flex items-center gap-1 rounded-lg bg-[#EAF4F4] px-2.5 py-0.5 text-xs font-bold text-[#1F7A7B] border border-[#CFE6E6]">
+                <Icon name="video" size={13} strokeWidth={1.8} />
+                <span>فيديو</span>
               </span>
             </div>
             {lesson.description && (
@@ -127,7 +129,8 @@ export function LessonRow({
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-[#1F7A7B] hover:underline pt-1 dir-ltr"
               >
-                <span>🔗 {lesson.video_url}</span>
+                <Icon name="link" size={12} strokeWidth={1.8} />
+                <span>{lesson.video_url}</span>
               </a>
             )}
           </div>

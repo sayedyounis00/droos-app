@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CourseItem } from '@/lib/droos-data';
 import { ModuleAccordion } from './ModuleAccordion';
+import { Icon } from '@/components/ui/Icon';
 
 interface CourseAccordionProps {
   course: CourseItem;
@@ -61,16 +62,9 @@ export function CourseAccordion({
             className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F7F8F9] text-[#4A5158] hover:text-[#1F7A7B] hover:bg-[#EAF4F4] transition-colors"
             title={isExpanded ? 'طي الدورة' : 'عرض محتوى الدورة'}
           >
-            <svg
-              className={`h-5 w-5 transition-transform duration-200 ${
-                isExpanded ? 'rotate-90' : 'rotate-180'
-              }`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <span className={`inline-flex transition-transform duration-200 ${isExpanded ? 'rotate-90' : 'rotate-180'}`}>
+              <Icon name="chevron-left" size={16} strokeWidth={2} />
+            </span>
           </button>
 
           <div className="space-y-1">
@@ -111,7 +105,8 @@ export function CourseAccordion({
             }}
             className="flex items-center gap-1.5 rounded-xl bg-[#1F7A7B] py-2 px-3.5 text-xs font-bold text-white hover:bg-[#166465] transition-colors shadow-sm shadow-[#1F7A7B]/20"
           >
-            <span>+ إضافة درس</span>
+            <Icon name="plus" size={14} strokeWidth={2.2} />
+            <span>إضافة درس</span>
           </button>
 
           <button
@@ -119,9 +114,7 @@ export function CourseAccordion({
             className="p-2 text-[#4A5158] hover:text-[#1F7A7B] rounded-xl hover:bg-[#F7F8F9] transition-colors"
             title="تعديل بيانات الدورة"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
+            <Icon name="edit" size={16} strokeWidth={1.8} />
           </button>
 
           <button
@@ -129,9 +122,7 @@ export function CourseAccordion({
             className="p-2 text-[#8A929B] hover:text-[#D9483D] rounded-xl hover:bg-[#D9483D]/5 transition-colors"
             title="حذف الدورة"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
+            <Icon name="trash" size={16} strokeWidth={1.8} />
           </button>
         </div>
       </div>
@@ -147,9 +138,10 @@ export function CourseAccordion({
                 <button
                   type="button"
                   onClick={() => setIsAddingModule(false)}
-                  className="text-xs text-[#8A929B] hover:text-[#1C2126]"
+                  className="inline-flex items-center gap-1 text-xs text-[#8A929B] hover:text-[#1C2126]"
                 >
-                  ✕ إلغاء
+                  <Icon name="x" size={13} strokeWidth={2} />
+                  <span>إلغاء</span>
                 </button>
               </div>
 
@@ -192,9 +184,10 @@ export function CourseAccordion({
               <p>لا توجد دروس مضافة في هذه الدورة بعد.</p>
               <button
                 onClick={() => setIsAddingModule(true)}
-                className="mt-2 text-xs font-bold text-[#1F7A7B] hover:underline"
+                className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#1F7A7B] hover:underline"
               >
-                + أضف أول درس الآن
+                <Icon name="plus" size={12} strokeWidth={2.2} />
+                <span>أضف أول درس الآن</span>
               </button>
             </div>
           ) : (

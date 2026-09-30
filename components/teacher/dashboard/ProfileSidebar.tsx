@@ -1,5 +1,6 @@
 import React from 'react';
 import { TeacherUser } from '@/lib/auth/teacher-auth';
+import { Icon } from '@/components/ui/Icon';
 
 interface ProfileSidebarProps {
   teacher: TeacherUser | null;
@@ -70,14 +71,23 @@ export function ProfileSidebar({
           <div className="flex justify-between items-center py-2 border-b border-[#F7F8F9]">
             <span className="text-[#8A929B]">حالة قفل الرابط:</span>
             {subdomainLocked ? (
-              <span className="font-bold text-[#D9483D]">مقفول 🔒</span>
+              <span className="inline-flex items-center gap-1.5 font-bold text-[#D9483D]">
+                <Icon name="lock" size={13} strokeWidth={1.8} />
+                <span>مقفول</span>
+              </span>
             ) : (
-              <span className="font-bold text-[#2E9E5B]">متاح للتعديل ✏️</span>
+              <span className="inline-flex items-center gap-1.5 font-bold text-[#2E9E5B]">
+                <Icon name="edit" size={13} strokeWidth={1.8} />
+                <span>متاح للتعديل</span>
+              </span>
             )}
           </div>
           <div className="flex justify-between items-center py-2">
             <span className="text-[#8A929B]">حالة الحساب:</span>
-            <span className="font-bold text-[#2E9E5B]">نشط ومعتمد ✔</span>
+            <span className="inline-flex items-center gap-1.5 font-bold text-[#2E9E5B]">
+              <Icon name="check-circle" size={13} strokeWidth={1.8} />
+              <span>نشط ومعتمد</span>
+            </span>
           </div>
         </div>
       </div>
