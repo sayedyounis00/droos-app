@@ -15,7 +15,7 @@ export default function HeroSection() {
             {/* Eyebrow Badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-[#7EB8B9]/40 bg-[#EAF4F4] px-4 py-1.5 text-xs font-semibold text-[#0F4E4F] shadow-sm mb-6">
               <span className="flex h-2 w-2 rounded-full bg-[#1F7A7B] animate-pulse" />
-              <span>✨ المنصة الأبسط للمعلمين في مصر لإنشاء مساحتهم التعليمية</span>
+              <span>المنصة الأبسط للمعلمين في مصر لإنشاء مساحتهم التعليمية</span>
             </div>
 
             {/* Main Headline H1 */}
@@ -116,7 +116,7 @@ export default function HeroSection() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FDF3E3] text-[#E8A83C]">
-                        📐
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
                       </div>
                       <div>
                         <h5 className="text-sm font-bold text-[#1C2126]">الهندسة الفراغية — الفصل 1</h5>

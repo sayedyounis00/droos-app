@@ -1,20 +1,22 @@
+import { Icon, IconName } from '@/components/ui/Icon';
+
 export default function HowItWorks() {
-  const steps = [
+  const steps: { step: string; icon: IconName; title: string; desc: string }[] = [
     {
       step: "01",
-      icon: "💬",
+      icon: "message-square",
       title: "تواصل معنا عبر واتساب",
       desc: "خطوة واحدة فقط لإنشاء وتفعيل حساب المعلم الخاص بك مباشرة.",
     },
     {
       step: "02",
-      icon: "👤",
+      icon: "user",
       title: "أكمل بيانات ملفك الشخصي",
       desc: "أضف معلوماتك، تخصصك الدراسي، وصورتك الشخصية في أي وقت يناسبك.",
     },
     {
       step: "03",
-      icon: "🚀",
+      icon: "graduation-cap",
       title: "أنشئ منصتك وابدأ التدريس",
       desc: "أضف دروسك وموادك التعليمية، واستقبل طلابك بكل سهولة وسلاسة.",
     },
@@ -46,7 +48,9 @@ export default function HowItWorks() {
             >
               {/* Step Badge */}
               <div className="flex w-full items-center justify-between">
-                <span className="text-3xl">{item.icon}</span>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EAF4F4] text-[#1F7A7B]">
+                  <Icon name={item.icon} size={22} strokeWidth={1.5} />
+                </div>
                 <span className="text-3xl font-black text-[#CFE6E6]">{item.step}</span>
               </div>
 

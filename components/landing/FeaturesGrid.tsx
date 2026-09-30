@@ -1,32 +1,34 @@
+import { Icon, IconName } from '@/components/ui/Icon';
+
 export default function FeaturesGrid() {
-  const features = [
+  const features: { icon: IconName; title: string; desc: string }[] = [
     {
-      icon: "🔑",
+      icon: "zap",
       title: "تفعيل سريع كمعلم",
       desc: "إنشاء وتفعيل حساب المعلم مباشرة عبر واتساب بدون تعقيدات أو تذكر كلمات مرور مفقودة.",
     },
     {
-      icon: "🎓",
+      icon: "graduation-cap",
       title: "منصتك الخاصة المستقلة",
       desc: "مساحتك المستقلة بالكامل لإدارة المحتوى التعليمي والدروس بما يتوافق مع أسلوبك.",
     },
     {
-      icon: "📚",
+      icon: "book-open",
       title: "إدارة المحتوى المنهجي",
       desc: "أضف الدروس والمواد المطبوعة والمقاطع وتنظيم المناهج والدورات بكل مرونة.",
     },
     {
-      icon: "👥",
+      icon: "users",
       title: "متابعة انضمام الطلاب",
       desc: "شاهد انضمام الطلاب لقاعتك، وتابع حضورهم وتقدمهم الدراسي من لوحة تحكم واحدة.",
     },
     {
-      icon: "🔒",
+      icon: "shield-check",
       title: "حماية وأمان المحتوى",
       desc: "تقنيات حديثة وتشفير آمن لحفظ بياناتك ومحتواك التعليمي وملفاتك الدراسية.",
     },
     {
-      icon: "⚡",
+      icon: "zap",
       title: "أداء سريع على جميع الأجهزة",
       desc: "سريعة الاستجابة على الجوال والتابلت والكمبيوتر دون أي بطء أو انقطاع.",
     },
@@ -56,8 +58,8 @@ export default function FeaturesGrid() {
               key={idx}
               className="group flex flex-col rounded-3xl border border-[#EEF0F2] bg-white p-8 transition-all hover:border-[#1F7A7B] hover:shadow-lg"
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF4F4] text-2xl transition-transform group-hover:scale-110">
-                {feat.icon}
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF4F4] text-[#1F7A7B] transition-transform group-hover:scale-110">
+                <Icon name={feat.icon} size={26} strokeWidth={1.5} />
               </div>
               <h3 className="mt-6 text-lg font-bold text-[#1C2126]">
                 {feat.title}

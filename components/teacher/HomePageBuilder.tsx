@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   PLATFORM_THEMES,
   THEME_LIST,
   ThemeId,
   PlatformTheme,
 } from "@/lib/themes";
+import { TeacherUser } from "@/lib/auth/teacher-auth";
+import { CourseItem } from "@/lib/droos-data";
+import { Icon, IconBadge, IconName } from "@/components/ui/Icon";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,11 +38,27 @@ interface ContactSection {
   note: string;
 }
 
+interface PageHeadingConfig {
+  title: string;
+  subtitle: string;
+}
+
+interface LessonDetailConfig {
+  title?: string;
+  moduleName?: string;
+  description?: string;
+  teacherNote?: string;
+  pdfTitle?: string;
+}
+
 interface HomePageData {
   hero: HeroSection;
   about: AboutSection;
   testimonials: TestimonialsSection;
   contact: ContactSection;
+  modulesPage?: PageHeadingConfig;
+  lessonsPage?: PageHeadingConfig;
+  lessonDetailPage?: LessonDetailConfig;
 }
 
 // ─── Default Data ─────────────────────────────────────────────────────────────
@@ -70,6 +89,18 @@ const defaultData: HomePageData = {
     whatsapp: "01143825523",
     note: "للتسجيل والاستفسار تواصل معنا يومياً من 10 صباحاً حتى 10 مساءً",
   },
+  modulesPage: {
+    title: "الوحدات والكورسات الدراسية",
+    subtitle: "استكشف الكورسات الشاملة والوحدات التعليمية المتاحة للتسجيل مباشرة",
+  },
+  lessonsPage: {
+    title: "مكتبة الدروس والتمارين",
+    subtitle: "تصفح وشاهد كل الدروس التفاعلية مع إمكانية مشاهدة الدروس المجانية تجريبياً",
+  },
+  lessonDetailPage: {
+    teacherNote: "احرص على حل التمارين التطبيقية بعد مشاهدة الشرح مباشرة لتثبيت المعلومة.",
+    pdfTitle: "ملخص الدرس والتمارين التطبيقية (PDF)",
+  },
 };
 
 const defaultTeachingYears = [
@@ -78,21 +109,30 @@ const defaultTeachingYears = [
   "الصف الثالث الثانوي",
 ];
 
+// Helper to extract clean YouTube embed URL
+function getYouTubeEmbedUrl(url?: string | null): string | null {
+  if (!url) return null;
+  const match = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/
+  );
+  return match ? `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=0&rel=0` : null;
+}
+
 // ─── Section Icons ────────────────────────────────────────────────────────────
 
 const sections = [
-  { id: "hero", label: "القسم الرئيسي", icon: "🏠" },
-  { id: "about", label: "نبذة عني", icon: "👤" },
-  { id: "courses", label: "السنوات الدراسية", icon: "🎓" },
-  { id: "testimonials", label: "آراء الطلاب", icon: "💬" },
-  { id: "contact", label: "التواصل", icon: "📞" },
+  { id: "hero", label: "القسم الرئيسي", icon: "home" as IconName },
+  { id: "about", label: "نبذة عني", icon: "user" as IconName },
+  { id: "courses", label: "السنوات الدراسية", icon: "graduation-cap" as IconName },
+  { id: "testimonials", label: "آراء الطلاب", icon: "message-square" as IconName },
+  { id: "contact", label: "التواصل", icon: "phone" as IconName },
 ] as const;
 
 type SectionId = (typeof sections)[number]["id"];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-interface ModuleItem {
+interface BuilderModulePreview {
   id: string;
   title: string;
   description: string;
@@ -105,7 +145,7 @@ interface ModuleItem {
 interface ModulesPageData {
   title: string;
   subtitle: string;
-  modules: ModuleItem[];
+  modules: BuilderModulePreview[];
 }
 
 const defaultModulesData: ModulesPageData = {
@@ -118,7 +158,7 @@ const defaultModulesData: ModulesPageData = {
       description: "شرح كامل لمفاهيم الأعداد المركبة، المحددات، والمصفوفات والهندسة الثلاثية الأبعاد.",
       lessonsCount: 14,
       duration: "18 ساعة",
-      badge: "الأكثر طلباً ⭐",
+      badge: "الأكثر طلباً",
       progress: 65,
     },
     {
@@ -127,7 +167,7 @@ const defaultModulesData: ModulesPageData = {
       description: "تطبيقات النوايات، المشتقات العليا، والتكاملات المحددة وغير المحددة خطوة بخطوة.",
       lessonsCount: 18,
       duration: "22 ساعة",
-      badge: "جديد 🚀",
+      badge: "جديد",
       progress: 40,
     },
     {
@@ -136,13 +176,13 @@ const defaultModulesData: ModulesPageData = {
       description: "تحليل القوى، الاتزان العام، وقوانين نيوتن في الحركة مع حل مسائل الامتحانات الوطنية.",
       lessonsCount: 12,
       duration: "15 ساعة",
-      badge: "مراجعة شاملة 📝",
+      badge: "مراجعة شاملة",
       progress: 90,
     },
   ],
 };
 
-interface LessonItem {
+interface BuilderLessonPreview {
   id: string;
   title: string;
   module: string;
@@ -154,7 +194,7 @@ interface LessonItem {
 interface LessonsPageData {
   title: string;
   subtitle: string;
-  lessons: LessonItem[];
+  lessons: BuilderLessonPreview[];
 }
 
 const defaultLessonsData: LessonsPageData = {
@@ -187,10 +227,10 @@ const defaultLessonDetailData: LessonDetailData = {
 };
 
 const pages = [
-  { id: "home", label: "الصفحة الرئيسية", icon: "🏠", subtitle: "واجهة الهبوط العامة" },
-  { id: "modules", label: "جميع الكورسات والوحدات", icon: "📚", subtitle: "فهرس الكورسات والوحدات الدراسية" },
-  { id: "lessons", label: "جميع الدروس والتمارين", icon: "🎬", subtitle: "مكتبة الدروس المتاحة للطلاب" },
-  { id: "lesson-detail", label: "معاينة الدرس ومشغل الفيديو", icon: "📺", subtitle: "شاشة مشاهدة الدرس والملحقات" },
+  { id: "home", label: "الصفحة الرئيسية", icon: "home" as IconName, subtitle: "واجهة الهبوط العامة" },
+  { id: "modules", label: "جميع الكورسات والوحدات", icon: "book-open" as IconName, subtitle: "فهرس الكورسات والوحدات الدراسية" },
+  { id: "lessons", label: "جميع الدروس والتمارين", icon: "play" as IconName, subtitle: "مكتبة الدروس المتاحة للطلاب" },
+  { id: "lesson-detail", label: "معاينة الدرس ومشغل الفيديو", icon: "tv" as IconName, subtitle: "شاشة مشاهدة الدرس والملحقات" },
 ] as const;
 
 type PageId = (typeof pages)[number]["id"];
@@ -198,22 +238,243 @@ type PageId = (typeof pages)[number]["id"];
 export default function HomePageBuilder({
   onBack,
   teacherGrades,
+  teacher,
 }: {
   onBack: () => void;
   teacherGrades?: string[];
+  teacher?: TeacherUser | null;
 }) {
-  const [data, setData] = useState<HomePageData>(defaultData);
+  // ── Build teacher-aware defaults ──────────────────────────────────────────
+  const teacherDefaultData: HomePageData = {
+    hero: {
+      headline: "تعلّم بطريقة مختلفة تماماً",
+      subheadline: teacher?.bio
+        ? teacher.bio
+        : "دروس متخصصة لطلاب المرحلة الثانوية — شرح واضح، ومتابعة حقيقية.",
+      ctaText: "سجّل في المجموعة الآن",
+      badge: "نتائج مضمونة أو استرداد المصاريف",
+    },
+    about: {
+      name: teacher?.name ?? "اسم المعلم",
+      subject: teacher?.subject ?? "المادة التخصصية",
+      experience: "خبرة في التدريس",
+      bio: teacher?.bio ?? "نبذة مختصرة عن المعلم وخبراته التعليمية.",
+    },
+    testimonials: defaultData.testimonials,
+    contact: defaultData.contact,
+    modulesPage: defaultData.modulesPage,
+    lessonsPage: defaultData.lessonsPage,
+    lessonDetailPage: defaultData.lessonDetailPage,
+  };
+
+  // ── Restore saved settings from localStorage ──────────────────────────────
+  const storageKey = teacher?.id ? `droos_homepage_${teacher.id}` : null;
+
+  const [data, setData] = useState<HomePageData>(() => {
+    if (storageKey && typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed?.homePageData) return { ...teacherDefaultData, ...parsed.homePageData };
+        }
+      } catch {}
+    }
+    return teacherDefaultData;
+  });
+
+  const [selectedThemeId, setSelectedThemeId] = useState<ThemeId>(() => {
+    if (storageKey && typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed?.themeId) return parsed.themeId as ThemeId;
+        }
+      } catch {}
+    }
+    return "horizon";
+  });
+
   const [activeSection, setActiveSection] = useState<SectionId>("hero");
-  const [previewMode, setPreviewMode] = useState(true);
+  // Default to false so the side-by-side editing & page preview is active immediately!
+  const [previewMode, setPreviewMode] = useState(false);
+  const [mobileEditorTab, setMobileEditorTab] = useState<"editor" | "preview">("editor");
   const [saved, setSaved] = useState(false);
-  const [selectedThemeId, setSelectedThemeId] = useState<ThemeId>("horizon");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [activePage, setActivePage] = useState<PageId>("home");
-  const [showPagePicker, setShowPagePicker] = useState(false);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
 
-  const [modulesData, setModulesData] = useState<ModulesPageData>(defaultModulesData);
-  const [lessonsData, setLessonsData] = useState<LessonsPageData>(defaultLessonsData);
-  const [lessonDetailData, setLessonDetailData] = useState<LessonDetailData>(defaultLessonDetailData);
+  // ── Restore saved settings from Database ─────────────────────────────────
+  useEffect(() => {
+    if (!teacher?.id) return;
+    let isMounted = true;
+    const loadSavedSettings = async () => {
+      try {
+        const res = await fetch(`/api/teacher/homepage?teacherId=${teacher.id}`);
+        const json = await res.json();
+        if (isMounted && json.success && json.platform) {
+          if (json.themeId) {
+            setSelectedThemeId(json.themeId as ThemeId);
+          }
+          if (json.homePageData) {
+            setData((prev) => ({
+              ...prev,
+              ...json.homePageData,
+              hero: { ...prev.hero, ...(json.homePageData.hero || {}) },
+              about: { ...prev.about, ...(json.homePageData.about || {}) },
+              testimonials: json.homePageData.testimonials || prev.testimonials,
+              contact: { ...prev.contact, ...(json.homePageData.contact || {}) },
+              modulesPage: { ...prev.modulesPage, ...(json.homePageData.modulesPage || {}) },
+              lessonsPage: { ...prev.lessonsPage, ...(json.homePageData.lessonsPage || {}) },
+              lessonDetailPage: { ...prev.lessonDetailPage, ...(json.homePageData.lessonDetailPage || {}) },
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load saved homepage settings from DB:", err);
+      }
+    };
+    loadSavedSettings();
+    return () => {
+      isMounted = false;
+    };
+  }, [teacher?.id]);
+
+  // ── Real data from DB ─────────────────────────────────────────────────────
+  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false);
+  const [coursesLoaded, setCoursesLoaded] = useState(false);
+
+  const fetchCourses = useCallback(async () => {
+    if (!teacher?.id) return;
+    setIsLoadingCourses(true);
+    try {
+      const res = await fetch(
+        `/api/teacher/courses?gradeLevelIds=all&teacherId=${teacher.id}`
+      );
+      const json = await res.json();
+      if (json.success && Array.isArray(json.courses)) {
+        setCourses(json.courses as CourseItem[]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch courses for builder:", err);
+    } finally {
+      setIsLoadingCourses(false);
+      setCoursesLoaded(true);
+    }
+  }, [teacher?.id]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
+  // ── Flatten all real lessons with course & module context ────────────────
+  const allLessons = courses.flatMap((course) =>
+    (course.modules ?? []).flatMap((mod) =>
+      (mod.lessons ?? []).map((l) => ({
+        ...l,
+        courseTitle: course.title,
+        gradeName: course.grade_levels?.name_ar,
+        moduleTitle: mod.title,
+        moduleId: mod.id,
+        courseId: course.id,
+      }))
+    )
+  );
+
+  // Auto-select first lesson when loaded if none is active
+  useEffect(() => {
+    if (!selectedLessonId && allLessons.length > 0) {
+      setSelectedLessonId(allLessons[0].id);
+    }
+  }, [allLessons, selectedLessonId]);
+
+  const currentActiveLesson =
+    allLessons.find((l) => l.id === selectedLessonId) || allLessons[0] || null;
+
+  const currentActiveModule =
+    courses
+      .flatMap((c) => c.modules ?? [])
+      .find((m) => m.id === currentActiveLesson?.moduleId) || null;
+
+  const currentActiveCourse =
+    courses.find((c) => c.id === currentActiveLesson?.courseId) || null;
+
+  const currentPlaylist = currentActiveModule?.lessons ?? [];
+
+  // ── Map real courses → ModulesPageData ───────────────────────────────────
+  const modulesData: ModulesPageData = {
+    title: data.modulesPage?.title || defaultModulesData.title,
+    subtitle: data.modulesPage?.subtitle || defaultModulesData.subtitle,
+    modules:
+      coursesLoaded && courses.length > 0
+        ? courses.flatMap((course) =>
+            (course.modules ?? []).map((mod) => ({
+              id: mod.id,
+              title: mod.title,
+              description:
+                course.description ||
+                `دروس ${course.title} — ${course.grade_levels?.name_ar ?? ""}`,
+              lessonsCount: mod.lessons?.length ?? 0,
+              duration: `${mod.lessons?.length ?? 0} حصة`,
+              badge: `${course.title} • ${course.grade_levels?.name_ar ?? ""}`,
+              progress: 0,
+            }))
+          )
+        : defaultModulesData.modules,
+  };
+
+  // ── Map real lessons → LessonsPageData ──────────────────────────────────
+  const lessonsData: LessonsPageData = {
+    title: data.lessonsPage?.title || defaultLessonsData.title,
+    subtitle: data.lessonsPage?.subtitle || defaultLessonsData.subtitle,
+    lessons:
+      coursesLoaded && courses.length > 0
+        ? courses.flatMap((course) =>
+            (course.modules ?? []).flatMap((mod) =>
+              (mod.lessons ?? []).map((lesson) => ({
+                id: lesson.id,
+                title: lesson.title,
+                module: `${course.title} — ${mod.title}`,
+                duration:
+                  lesson.content_type === "video"
+                    ? "فيديو"
+                    : lesson.content_type === "pdf"
+                    ? "ملف PDF"
+                    : "حصة تدريبية",
+                isFree: !lesson.video_url?.includes("locked"),
+                views: 0,
+              }))
+            )
+          )
+        : defaultLessonsData.lessons,
+  };
+
+  // ── Lesson detail: driven by real active lesson & user customisation ───────
+  const lessonDetailData: LessonDetailData = {
+    title:
+      data.lessonDetailPage?.title ||
+      currentActiveLesson?.title ||
+      defaultLessonDetailData.title,
+    moduleName:
+      data.lessonDetailPage?.moduleName ||
+      (currentActiveLesson
+        ? `${currentActiveModule?.title ?? "الوحدة الدراسية"} — ${currentActiveCourse?.title ?? ""}`
+        : defaultLessonDetailData.moduleName),
+    description:
+      data.lessonDetailPage?.description ||
+      currentActiveLesson?.description ||
+      defaultLessonDetailData.description,
+    teacherNote:
+      data.lessonDetailPage?.teacherNote ||
+      defaultLessonDetailData.teacherNote,
+    pdfTitle:
+      data.lessonDetailPage?.pdfTitle ||
+      defaultLessonDetailData.pdfTitle,
+  };
 
   const currentPage = pages.find((p) => p.id === activePage) || pages[0];
 
@@ -232,9 +493,49 @@ export default function HomePageBuilder({
     setSelectedThemeId(id);
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveMessage(null);
+    try {
+      // 1. Save to localStorage
+      if (storageKey && typeof window !== "undefined") {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({ homePageData: data, themeId: selectedThemeId })
+        );
+      }
+
+      // 2. Save to database via dedicated API
+      if (teacher?.id) {
+        const res = await fetch("/api/teacher/homepage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            teacherId: teacher.id,
+            themeId: selectedThemeId,
+            homePageData: data,
+          }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          setSaveMessage("تم حفظ الصفحة وإعدادات المنصة في قاعدة البيانات بنجاح");
+        } else {
+          setSaveMessage("تم الحفظ محلياً (حدث خطأ في مزامنة قاعدة البيانات)");
+        }
+      } else {
+        setSaveMessage("تم حفظ التعديلات محلياً بنجاح");
+      }
+    } catch (err) {
+      console.error("Failed to save homepage:", err);
+      setSaveMessage("تم الحفظ محلياً (تعذر الاتصال بالخادم)");
+    } finally {
+      setIsSaving(false);
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        setSaveMessage(null);
+      }, 4000);
+    }
   };
 
   const handleUpdateHero = (updated: Partial<HeroSection>) => {
@@ -268,6 +569,118 @@ export default function HomePageBuilder({
     setData((prev) => ({ ...prev, contact: { ...prev.contact, ...updated } }));
   };
 
+  const handleUpdateModulesPage = (updated: Partial<PageHeadingConfig>) => {
+    setData((prev) => ({
+      ...prev,
+      modulesPage: {
+        title: updated.title ?? prev.modulesPage?.title ?? defaultModulesData.title,
+        subtitle: updated.subtitle ?? prev.modulesPage?.subtitle ?? defaultModulesData.subtitle,
+      },
+    }));
+  };
+
+  const handleUpdateLessonsPage = (updated: Partial<PageHeadingConfig>) => {
+    setData((prev) => ({
+      ...prev,
+      lessonsPage: {
+        title: updated.title ?? prev.lessonsPage?.title ?? defaultLessonsData.title,
+        subtitle: updated.subtitle ?? prev.lessonsPage?.subtitle ?? defaultLessonsData.subtitle,
+      },
+    }));
+  };
+
+  const handleUpdateLessonDetailPage = (updated: Partial<LessonDetailConfig>) => {
+    setData((prev) => ({
+      ...prev,
+      lessonDetailPage: {
+        ...prev.lessonDetailPage,
+        ...updated,
+      },
+    }));
+  };
+
+  // ── Render Active Page Component ─────────────────────────────────────────
+  const renderActivePageContent = () => {
+    if (activePage === "home") {
+      return (
+        <PreviewPage
+          data={data}
+          teachingYears={displayGrades}
+          courses={courses}
+          onViewAllCourses={() => setActivePage("modules")}
+          onViewCourse={() => setActivePage("modules")}
+          theme={currentTheme}
+          onEditText={(config) => setEditModal(config)}
+          onUpdateHero={handleUpdateHero}
+          onUpdateAbout={handleUpdateAbout}
+          onUpdateTestimonialsTitle={handleUpdateTestimonialsTitle}
+          onUpdateTestimonial={handleUpdateTestimonial}
+          onUpdateContact={handleUpdateContact}
+        />
+      );
+    }
+
+    if (activePage === "modules") {
+      return isLoadingCourses ? (
+        <div className="flex items-center justify-center py-32 text-[#1F7A7B]">
+          <div className="text-center space-y-3">
+            <div className="w-10 h-10 border-4 border-[#1F7A7B] border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-sm font-bold">جاري تحميل الكورسات من قاعدة البيانات...</p>
+          </div>
+        </div>
+      ) : (
+        <ModulesPagePreview
+          data={modulesData}
+          theme={currentTheme}
+          isLiveData={coursesLoaded && courses.length > 0}
+          onViewLessons={() => setActivePage("lessons")}
+        />
+      );
+    }
+
+    if (activePage === "lessons") {
+      return isLoadingCourses ? (
+        <div className="flex items-center justify-center py-32 text-[#1F7A7B]">
+          <div className="text-center space-y-3">
+            <div className="w-10 h-10 border-4 border-[#1F7A7B] border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-sm font-bold">جاري تحميل الدروس من قاعدة البيانات...</p>
+          </div>
+        </div>
+      ) : (
+        <LessonsPagePreview
+          data={lessonsData}
+          theme={currentTheme}
+          isLiveData={coursesLoaded && courses.length > 0}
+          onSelectLesson={(lessonId) => {
+            setSelectedLessonId(lessonId);
+            setActivePage("lesson-detail");
+          }}
+        />
+      );
+    }
+
+    if (activePage === "lesson-detail") {
+      return (
+        <LessonDetailPreview
+          data={lessonDetailData}
+          theme={currentTheme}
+          videoUrl={currentActiveLesson?.video_url}
+          playlistLessons={currentPlaylist.map((l) => ({
+            id: l.id,
+            title: l.title,
+            duration: l.content_type === "video" ? "فيديو" : "درس",
+            content_type: l.content_type,
+            video_url: l.video_url,
+          }))}
+          currentLessonId={currentActiveLesson?.id}
+          onSelectLesson={(lessonId) => setSelectedLessonId(lessonId)}
+        />
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F8F9] flex flex-col font-sans" dir="rtl">
 
@@ -295,61 +708,29 @@ export default function HomePageBuilder({
             </div>
           </div>
 
-          {/* Center: Unique Page Switcher Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowPagePicker(!showPagePicker)}
-              className="flex items-center gap-2.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/30 py-2 px-3.5 text-xs font-black transition-all shadow-lg text-white"
-            >
-              <span className="text-sm bg-white/20 p-1 rounded-lg">{currentPage.icon}</span>
-              <div className="flex flex-col text-right">
-                <span className="text-[10px] text-[#F3C97C] font-bold">الصفحة المعروضة:</span>
-                <span className="text-xs font-black leading-none">{currentPage.label}</span>
-              </div>
-              <svg className={`h-4 w-4 text-white/80 mr-1 transition-transform ${showPagePicker ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {showPagePicker && (
-              <>
-                <div className="fixed inset-0 z-50" onClick={() => setShowPagePicker(false)} />
-                <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-72 sm:w-80 rounded-2xl bg-white text-[#1C2126] shadow-2xl border border-[#EEF0F2] p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="text-[10px] font-bold text-[#8A929B] px-3 py-1.5 border-b border-[#EEF0F2] mb-1">
-                    اختر الصفحة للتعديل والمعاينة:
-                  </div>
-                  {pages.map((p) => {
-                    const isSelected = p.id === activePage;
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => {
-                          setActivePage(p.id);
-                          setShowPagePicker(false);
-                        }}
-                        className={`w-full text-right p-2.5 rounded-xl transition-all flex items-center justify-between gap-3 ${
-                          isSelected
-                            ? "bg-[#EAF4F4] text-[#1F7A7B] font-black shadow-sm"
-                            : "hover:bg-[#F7F8F9] text-[#4A5158] font-bold"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-lg">{p.icon}</span>
-                          <div>
-                            <span className="block text-xs">{p.label}</span>
-                            <span className="block text-[10px] font-normal text-[#8A929B]">{p.subtitle}</span>
-                          </div>
-                        </div>
-                        {isSelected && <span className="text-xs text-[#1F7A7B]">✓</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
+          {/* Center: Prominent Page Selector Tabs */}
+          <div className="flex items-center bg-white/10 p-1 rounded-2xl border border-white/20 gap-1 overflow-x-auto max-w-full">
+            {pages.map((p) => {
+              const isSelected = p.id === activePage;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setActivePage(p.id)}
+                  className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-black transition-all whitespace-nowrap ${
+                    isSelected
+                      ? "bg-[#E8A83C] text-[#0F4E4F] shadow-md"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                  title={p.subtitle}
+                >
+                  <Icon name={p.icon} size={14} strokeWidth={1.8} />
+                  <span>{p.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Right: Theme Selector + Preview Toggle + Save Button */}
+          {/* Right: Theme Selector + Fullscreen Toggle + Save Button */}
           <div className="flex items-center gap-2">
             
             {/* Theme Selector Dropdown Trigger (Placed Next to Preview) */}
@@ -358,7 +739,7 @@ export default function HomePageBuilder({
                 onClick={() => setShowThemePicker(!showThemePicker)}
                 className="flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 py-2 px-3 text-xs font-bold transition-all shadow-inner"
               >
-                <span className="text-sm">🎨</span>
+                <Icon name="palette" size={15} strokeWidth={1.8} className="text-[#F3C97C]" />
                 <div className="flex items-center gap-1.5">
                   <span className="text-white/70 text-[11px] hidden xs:inline">الثيم:</span>
                   <span className="font-bold text-[#F3C97C]">{currentTheme.nameAr}</span>
@@ -381,7 +762,8 @@ export default function HomePageBuilder({
                   <div className="absolute left-0 sm:right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white text-[#1C2126] shadow-2xl border border-[#EEF0F2] p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
                     <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-2.5 mb-2.5 px-1">
                       <span className="text-xs font-black text-[#0F4E4F] flex items-center gap-1.5">
-                        <span>🎨</span> اختر هُوية المنصة (4 ثيمات مخصصة)
+                        <Icon name="palette" size={15} strokeWidth={1.8} className="text-[#1F7A7B]" />
+                        <span>اختر هُوية المنصة (4 ثيمات مخصصة)</span>
                       </span>
                       <span className="text-[10px] text-[#8A929B]">تحدث فوراً في المعاينة</span>
                     </div>
@@ -442,7 +824,7 @@ export default function HomePageBuilder({
               )}
             </div>
 
-            {/* Preview Toggle */}
+            {/* Fullscreen Preview Toggle */}
             <button
               onClick={() => setPreviewMode(!previewMode)}
               className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
@@ -450,20 +832,27 @@ export default function HomePageBuilder({
                   ? "bg-[#E8A83C] text-[#0F4E4F]"
                   : "bg-white/10 hover:bg-white/20 text-white"
               }`}
+              title={previewMode ? "العودة للتحرير والمشاهدة الجانبية" : "عرض الصفحة ملء الشاشة"}
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              <span className="hidden sm:inline">{previewMode ? "إغلاق المعاينة" : "معاينة"}</span>
+              <span className="hidden sm:inline">{previewMode ? "العودة للتعديل" : "ملء الشاشة"}</span>
             </button>
 
             {/* Save Button */}
             <button
               onClick={handleSave}
-              className="flex items-center gap-1.5 rounded-xl bg-[#E8A83C] hover:bg-[#C88A22] px-3.5 py-2 text-xs font-bold text-[#0F4E4F] transition-all active:scale-95 shadow-md shadow-[#E8A83C]/30"
+              disabled={isSaving}
+              className="flex items-center gap-1.5 rounded-xl bg-[#E8A83C] hover:bg-[#C88A22] disabled:opacity-75 px-3.5 py-2 text-xs font-bold text-[#0F4E4F] transition-all active:scale-95 shadow-md shadow-[#E8A83C]/30"
             >
-              {saved ? (
+              {isSaving ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-[#0F4E4F] border-t-transparent rounded-full animate-spin" />
+                  <span>جاري الحفظ...</span>
+                </>
+              ) : saved ? (
                 <>
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -475,7 +864,7 @@ export default function HomePageBuilder({
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                   </svg>
-                  <span>حفظ</span>
+                  <span>حفظ التعديلات</span>
                 </>
               )}
             </button>
@@ -483,6 +872,19 @@ export default function HomePageBuilder({
           </div>
 
         </div>
+
+        {/* Global Save Feedback Toast Notification */}
+        {saveMessage && (
+          <div className="bg-[#0A3536] border-t border-white/10 px-4 py-2 text-center text-xs font-bold text-[#F3C97C] animate-in slide-in-from-top-1 duration-200 flex items-center justify-center gap-2">
+            <Icon
+              name={saveMessage.includes("خطأ") || saveMessage.includes("تعذر") ? "alert-triangle" : "check-circle"}
+              size={14}
+              strokeWidth={2}
+              className="text-[#F3C97C]"
+            />
+            <span>{saveMessage}</span>
+          </div>
+        )}
       </header>
 
       {/* Awesome Interactive Edit Dialog */}
@@ -491,9 +893,7 @@ export default function HomePageBuilder({
           <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-[#EEF0F2] transition-all transform scale-100">
             <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-4 mb-4">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#EAF4F4] text-lg text-[#1F7A7B]">
-                  ✏️
-                </span>
+                <IconBadge name="pencil" variant="primary" size="md" />
                 <div>
                   <h3 className="text-base font-black text-[#1C2126]">{editModal.title}</h3>
                   <p className="text-xs text-[#8A929B]">{editModal.label}</p>
@@ -502,8 +902,9 @@ export default function HomePageBuilder({
               <button
                 onClick={() => setEditModal(null)}
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F8F9] text-[#8A929B] hover:bg-[#EEF0F2] hover:text-[#1C2126] transition-colors"
+                title="إغلاق"
               >
-                ✕
+                <Icon name="x" size={16} strokeWidth={2} />
               </button>
             </div>
 
@@ -547,8 +948,8 @@ export default function HomePageBuilder({
                 }}
                 className="flex items-center gap-2 rounded-xl bg-[#1F7A7B] hover:bg-[#166465] text-white px-6 py-2.5 text-xs font-black shadow-md transition-all active:scale-95"
               >
+                <Icon name="check" size={14} strokeWidth={2} />
                 <span>حفظ التعديل</span>
-                <span>✨</span>
               </button>
             </div>
           </div>
@@ -556,153 +957,193 @@ export default function HomePageBuilder({
       )}
 
       {previewMode ? (
-        // ── Full Preview Mode ──────────────────────────────────────────────────
-        <div className="flex-1 overflow-auto">
-          {/* Helpful interactive hint banner */}
-          <div className="bg-[#1F7A7B] text-white px-4 py-2.5 text-xs font-bold flex flex-wrap items-center justify-between gap-2 shadow-md">
+        // ── Full-Screen Preview Mode ───────────────────────────────────────────
+        <div className="flex-1 overflow-auto bg-white flex flex-col min-h-0">
+          {/* Top Banner allowing quick return to split editing mode */}
+          <div className="bg-[#0A3536] text-white px-4 py-2.5 text-xs font-bold flex items-center justify-between shadow-md flex-shrink-0">
             <div className="flex items-center gap-2">
-              <span className="text-base animate-bounce">💡</span>
-              <span>تعديل مباشر ({currentPage.label}): انقر على أي نص لتعديله فوراً عبر النافذة التفاعلية!</span>
+              <Icon name="eye" size={16} strokeWidth={1.8} className="text-[#F3C97C]" />
+              <span>أنت الآن في وضع ملء الشاشة لصفحة: <strong className="text-[#F3C97C]">({currentPage.label})</strong></span>
             </div>
-            <span className="bg-white/20 text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/30">
-              وضع التعديل بالنقر نشط ✨
-            </span>
+            <button
+              onClick={() => setPreviewMode(false)}
+              className="px-3.5 py-1.5 rounded-xl bg-[#E8A83C] text-[#0F4E4F] font-black text-xs hover:bg-[#F3C97C] transition-all shadow-sm active:scale-95 flex items-center gap-1.5"
+            >
+              <Icon name="edit" size={13} strokeWidth={2} />
+              <span>العودة للتعديل والمشاهدة الجانبية</span>
+            </button>
           </div>
 
-          {activePage === "home" && (
-            <PreviewPage
-              data={data}
-              teachingYears={displayGrades}
-              theme={currentTheme}
-              onEditText={(config) => setEditModal(config)}
-              onUpdateHero={handleUpdateHero}
-              onUpdateAbout={handleUpdateAbout}
-              onUpdateTestimonialsTitle={handleUpdateTestimonialsTitle}
-              onUpdateTestimonial={handleUpdateTestimonial}
-              onUpdateContact={handleUpdateContact}
-            />
-          )}
-
-          {activePage === "modules" && (
-            <ModulesPagePreview
-              data={modulesData}
-              theme={currentTheme}
-              onEditText={(config) => setEditModal(config)}
-              onUpdateTitle={(t) => setModulesData((prev) => ({ ...prev, title: t }))}
-              onUpdateSubtitle={(s) => setModulesData((prev) => ({ ...prev, subtitle: s }))}
-              onUpdateModule={(idx, updated) =>
-                setModulesData((prev) => ({
-                  ...prev,
-                  modules: prev.modules.map((m, i) => (i === idx ? { ...m, ...updated } : m)),
-                }))
-              }
-            />
-          )}
-
-          {activePage === "lessons" && (
-            <LessonsPagePreview
-              data={lessonsData}
-              theme={currentTheme}
-              onEditText={(config) => setEditModal(config)}
-              onUpdateTitle={(t) => setLessonsData((prev) => ({ ...prev, title: t }))}
-              onUpdateSubtitle={(s) => setLessonsData((prev) => ({ ...prev, subtitle: s }))}
-              onUpdateLesson={(idx, updated) =>
-                setLessonsData((prev) => ({
-                  ...prev,
-                  lessons: prev.lessons.map((l, i) => (i === idx ? { ...l, ...updated } : l)),
-                }))
-              }
-            />
-          )}
-
-          {activePage === "lesson-detail" && (
-            <LessonDetailPreview
-              data={lessonDetailData}
-              theme={currentTheme}
-              onEditText={(config) => setEditModal(config)}
-              onUpdateDetail={(updated) => setLessonDetailData((prev) => ({ ...prev, ...updated }))}
-            />
-          )}
+          <div className="w-full flex-1">
+            {renderActivePageContent()}
+          </div>
         </div>
       ) : (
-        // ── Editor Mode ────────────────────────────────────────────────────────
-        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0">
-
-          {/* Left: Section Navigator */}
-          <aside className="lg:w-56 border-b lg:border-b-0 lg:border-l border-[#EEF0F2] bg-white flex-shrink-0">
-            <div className="flex lg:flex-col gap-1 p-3 overflow-x-auto lg:overflow-x-visible">
-              <p className="hidden lg:block text-[10px] font-bold text-[#8A929B] uppercase tracking-widest px-2 mb-2">
-                أقسام الصفحة
-              </p>
-              {sections.map((sec) => (
-                <button
-                  key={sec.id}
-                  onClick={() => setActiveSection(sec.id)}
-                  className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-bold transition-all whitespace-nowrap ${
-                    activeSection === sec.id
-                      ? "bg-[#EAF4F4] text-[#1F7A7B] shadow-sm"
-                      : "text-[#4A5158] hover:bg-[#F7F8F9]"
-                  }`}
-                >
-                  <span className="text-base">{sec.icon}</span>
-                  <span className="hidden sm:inline">{sec.label}</span>
-                </button>
-              ))}
-
-              {/* Theme quick status box in sidebar */}
-              <div className="hidden lg:block mt-6 p-3 rounded-2xl border border-[#EEF0F2] bg-[#F7F8F9] text-xs">
-                <span className="block text-[10px] font-bold text-[#8A929B] mb-1">الثيم النشط:</span>
-                <div className="font-bold text-[#1C2126] flex items-center justify-between">
-                  <span>{currentTheme.nameAr}</span>
-                  <div className="flex gap-1 dir-ltr">
-                    {currentTheme.swatches.slice(0, 3).map((hex, i) => (
-                      <span key={i} className="h-2 w-2 rounded-full" style={{ backgroundColor: hex }} />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-[10px] text-[#5C646B] mt-1 line-clamp-2">{currentTheme.mood}</p>
-              </div>
-
-            </div>
-          </aside>
-
-          {/* Center: Editor Panel */}
-          <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-            {activeSection === "hero" && (
-              <HeroEditor data={data.hero} onChange={(hero) => setData({ ...data, hero })} />
-            )}
-            {activeSection === "about" && (
-              <AboutEditor data={data.about} onChange={(about) => setData({ ...data, about })} />
-            )}
-            {activeSection === "courses" && (
-              <TeachingYearsEditor grades={displayGrades} />
-            )}
-            {activeSection === "testimonials" && (
-              <TestimonialsEditor data={data.testimonials} onChange={(testimonials) => setData({ ...data, testimonials })} />
-            )}
-            {activeSection === "contact" && (
-              <ContactEditor data={data.contact} onChange={(contact) => setData({ ...data, contact })} />
-            )}
+        // ── Side-by-Side Editor & Live Page Preview Mode ────────────────────────
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          
+          {/* Mobile Tab Switcher (Visible on mobile/tablet screens only) */}
+          <div className="lg:hidden bg-white border-b border-[#EEF0F2] p-2 flex items-center justify-center gap-2 shadow-xs flex-shrink-0">
+            <button
+              onClick={() => setMobileEditorTab("editor")}
+              className={`flex-1 py-2 px-3 text-xs font-black rounded-xl text-center transition-all inline-flex items-center justify-center gap-1.5 ${
+                mobileEditorTab === "editor"
+                  ? "bg-[#1F7A7B] text-white shadow-sm"
+                  : "bg-[#F7F8F9] text-[#4A5158] hover:bg-[#EEF0F2]"
+              }`}
+            >
+              <Icon name="pencil" size={13} strokeWidth={1.8} />
+              <span>نموذج التعديل ({currentPage.label})</span>
+            </button>
+            <button
+              onClick={() => setMobileEditorTab("preview")}
+              className={`flex-1 py-2 px-3 text-xs font-black rounded-xl text-center transition-all inline-flex items-center justify-center gap-1.5 ${
+                mobileEditorTab === "preview"
+                  ? "bg-[#1F7A7B] text-white shadow-sm"
+                  : "bg-[#F7F8F9] text-[#4A5158] hover:bg-[#EEF0F2]"
+              }`}
+            >
+              <Icon name="eye" size={13} strokeWidth={1.8} />
+              <span>معاينة الصفحة الحية</span>
+            </button>
           </div>
 
-          {/* Right: Live Mini-Preview Panel */}
-          <aside className="hidden xl:block xl:w-96 border-r border-[#EEF0F2] bg-white overflow-auto flex-shrink-0">
-            <div className="p-3 border-b border-[#EEF0F2] flex items-center justify-between bg-[#F7F8F9]">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#1C2126]">معاينة مباشرة</span>
-                <span className="rounded-full bg-[#1F7A7B]/10 text-[#1F7A7B] text-[10px] font-bold px-2 py-0.5">
-                  {currentTheme.nameAr}
-                </span>
+          <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+
+            {/* Right Side: Editor Panel (Visible on desktop or when mobileEditorTab === 'editor') */}
+            <div
+              className={`w-full lg:w-[48%] xl:w-[45%] flex flex-col min-h-0 bg-[#F7F8F9] overflow-hidden ${
+                mobileEditorTab === "editor" ? "flex" : "hidden lg:flex"
+              }`}
+            >
+              {/* For Home Page, include the sections navigator */}
+              {activePage === "home" ? (
+                <div className="flex-1 flex flex-col sm:flex-row min-h-0 overflow-hidden">
+                  {/* Home Sections Tabs */}
+                  <aside className="sm:w-48 border-b sm:border-b-0 sm:border-l border-[#EEF0F2] bg-white flex-shrink-0 p-3 overflow-x-auto sm:overflow-y-auto">
+                    <p className="hidden sm:block text-[10px] font-bold text-[#8A929B] uppercase tracking-widest px-2 mb-2">
+                      أقسام الصفحة الرئيسية
+                    </p>
+                    <div className="flex sm:flex-col gap-1">
+                      {sections.map((sec) => (
+                        <button
+                          key={sec.id}
+                          onClick={() => setActiveSection(sec.id)}
+                          className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-all whitespace-nowrap ${
+                            activeSection === sec.id
+                              ? "bg-[#EAF4F4] text-[#1F7A7B] shadow-sm font-black"
+                              : "text-[#4A5158] hover:bg-[#F7F8F9]"
+                          }`}
+                        >
+                          <Icon name={sec.icon as IconName} size={15} strokeWidth={1.8} />
+                          <span>{sec.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </aside>
+
+                  {/* Home Active Section Form */}
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#F7F8F9]">
+                    {activeSection === "hero" && (
+                      <HeroEditor data={data.hero} onChange={handleUpdateHero} />
+                    )}
+                    {activeSection === "about" && (
+                      <AboutEditor data={data.about} onChange={handleUpdateAbout} />
+                    )}
+                    {activeSection === "courses" && (
+                      <TeachingYearsEditor grades={displayGrades} />
+                    )}
+                    {activeSection === "testimonials" && (
+                      <TestimonialsEditor data={data.testimonials} onChange={(testimonials) => setData((prev) => ({ ...prev, testimonials }))} />
+                    )}
+                    {activeSection === "contact" && (
+                      <ContactEditor data={data.contact} onChange={handleUpdateContact} />
+                    )}
+                  </div>
+                </div>
+              ) : activePage === "modules" ? (
+                /* Modules Page Editor */
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                  <ModulesEditor
+                    title={data.modulesPage?.title ?? defaultModulesData.title}
+                    subtitle={data.modulesPage?.subtitle ?? defaultModulesData.subtitle}
+                    onChangeTitle={(title) => handleUpdateModulesPage({ title })}
+                    onChangeSubtitle={(subtitle) => handleUpdateModulesPage({ subtitle })}
+                    coursesCount={courses.length}
+                    modulesCount={courses.reduce((acc, c) => acc + (c.modules?.length || 0), 0)}
+                  />
+                </div>
+              ) : activePage === "lessons" ? (
+                /* Lessons Page Editor */
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                  <LessonsEditor
+                    title={data.lessonsPage?.title ?? defaultLessonsData.title}
+                    subtitle={data.lessonsPage?.subtitle ?? defaultLessonsData.subtitle}
+                    onChangeTitle={(title) => handleUpdateLessonsPage({ title })}
+                    onChangeSubtitle={(subtitle) => handleUpdateLessonsPage({ subtitle })}
+                    lessonsCount={allLessons.length}
+                  />
+                </div>
+              ) : (
+                /* Lesson Detail & Video Player Editor */
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                  <LessonDetailEditor
+                    data={lessonDetailData}
+                    onChange={(updated) => handleUpdateLessonDetailPage(updated)}
+                    lessons={allLessons}
+                    activeLessonId={currentActiveLesson?.id}
+                    onSelectLesson={(id) => setSelectedLessonId(id)}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Left Side: The LIVE Page Preview (Visible on desktop or when mobileEditorTab === 'preview') */}
+            <aside
+              className={`w-full lg:w-[52%] xl:w-[55%] flex flex-col min-h-0 bg-[#EEF0F2]/50 border-r border-[#EEF0F2] overflow-hidden ${
+                mobileEditorTab === "preview" ? "flex" : "hidden lg:flex"
+              }`}
+            >
+              {/* Preview Bar Header */}
+              <div className="bg-white border-b border-[#EEF0F2] px-4 py-3 flex items-center justify-between shadow-xs flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <Icon name={currentPage.icon as IconName} size={16} strokeWidth={1.8} className="text-[#1F7A7B]" />
+                  <span className="text-xs font-black text-[#1C2126]">
+                    معاينة الصفحة الحية: {currentPage.label}
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#2E9E5B]/10 text-[#2E9E5B] flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#2E9E5B] animate-pulse" />
+                    <span className="inline-flex items-center gap-1">
+                      <span>تحديث فوري</span>
+                      <Icon name="zap" size={11} strokeWidth={2} />
+                    </span>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-[#8A929B] bg-[#F7F8F9] px-2.5 py-1 rounded-xl border border-[#EEF0F2]">
+                    ثيم {currentTheme.nameAr}
+                  </span>
+                  <button
+                    onClick={() => setPreviewMode(true)}
+                    className="text-[11px] font-black text-[#1F7A7B] hover:text-[#0F4E4F] flex items-center gap-1 hover:underline bg-[#EAF4F4] px-2.5 py-1 rounded-xl transition-colors"
+                    title="تكبير المعاينة ملء الشاشة"
+                  >
+                    <span>ملء الشاشة</span>
+                    <Icon name="external-link" size={12} strokeWidth={2} />
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="transform scale-[0.46] origin-top-right w-[217%] pointer-events-none overflow-hidden shadow-inner">
-              <PreviewPage
-                data={data}
-                teachingYears={displayGrades}
-                theme={currentTheme}
-              />
-            </div>
-          </aside>
+
+              {/* Scrollable Live Preview Container */}
+              <div className="flex-1 overflow-y-auto p-3 sm:p-5">
+                <div className="bg-white rounded-2xl shadow-xl border border-[#D3D7DC]/70 overflow-hidden min-h-full">
+                  {renderActivePageContent()}
+                </div>
+              </div>
+            </aside>
+
+          </div>
         </div>
       )}
     </div>
@@ -711,11 +1152,25 @@ export default function HomePageBuilder({
 
 // ─── Section Editors ──────────────────────────────────────────────────────────
 
-function EditorCard({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+function EditorCard({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: IconName | React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div className="max-w-2xl">
       <div className="mb-6 flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF4F4] text-xl">{icon}</span>
+        {typeof icon === "string" ? (
+          <IconBadge name={icon as IconName} variant="primary" size="md" />
+        ) : (
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF4F4] text-[#1F7A7B] border border-[#CFE6E6]">
+            {icon}
+          </span>
+        )}
         <div>
           <h2 className="text-lg font-black text-[#1C2126]">{title}</h2>
           <p className="text-xs text-[#8A929B]">عدّل المحتوى وشاهد التغيير في المعاينة مباشرة</p>
@@ -746,7 +1201,7 @@ function InputField({
 
 function HeroEditor({ data, onChange }: { data: HeroSection; onChange: (d: HeroSection) => void }) {
   return (
-    <EditorCard title="القسم الرئيسي (Hero)" icon="🏠">
+    <EditorCard title="القسم الرئيسي (Hero)" icon="home">
       <InputField label="الشارة التعريفية (Badge)" value={data.badge} onChange={(v) => onChange({ ...data, badge: v })} placeholder="نتائج مضمونة..." />
       <InputField label="العنوان الرئيسي" value={data.headline} onChange={(v) => onChange({ ...data, headline: v })} placeholder="تعلّم بطريقة مختلفة..." />
       <InputField label="النص التوضيحي" value={data.subheadline} onChange={(v) => onChange({ ...data, subheadline: v })} placeholder="وصف مختصر..." multiline />
@@ -757,7 +1212,7 @@ function HeroEditor({ data, onChange }: { data: HeroSection; onChange: (d: HeroS
 
 function AboutEditor({ data, onChange }: { data: AboutSection; onChange: (d: AboutSection) => void }) {
   return (
-    <EditorCard title="نبذة عني (About)" icon="👤">
+    <EditorCard title="نبذة عني (About)" icon="user">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <InputField label="اسمك الكامل" value={data.name} onChange={(v) => onChange({ ...data, name: v })} placeholder="أحمد سعد" />
         <InputField label="المادة التخصصية" value={data.subject} onChange={(v) => onChange({ ...data, subject: v })} placeholder="الرياضيات" />
@@ -770,10 +1225,11 @@ function AboutEditor({ data, onChange }: { data: AboutSection; onChange: (d: Abo
 
 function TeachingYearsEditor({ grades }: { grades: string[] }) {
   return (
-    <EditorCard title="السنوات والصفوف الدراسية (قسم ثابت)" icon="🎓">
+    <EditorCard title="السنوات والصفوف الدراسية (قسم ثابت)" icon="graduation-cap">
       <div className="rounded-2xl border border-[#CFE6E6] bg-[#EAF4F4]/60 p-5 space-y-4">
         <div className="flex items-center gap-2 text-[#0F4E4F] font-bold text-sm">
-          <span>🔒 هذا القسم ثابت ومربوط ببيانات الحساب</span>
+          <Icon name="lock" size={14} className="text-[#1F7A7B]" />
+          <span>هذا القسم ثابت ومربوط ببيانات الحساب</span>
         </div>
         <p className="text-xs text-[#4A5158] leading-relaxed">
           يتم عرض السنوات والصفوف الدراسية الخاصة بالمعلم تلقائياً من بيانات الحساب، ولا يمكن تعديل الدروس أو الكورسات الفردية من هنا.
@@ -783,7 +1239,7 @@ function TeachingYearsEditor({ grades }: { grades: string[] }) {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {grades.map((grade, idx) => (
               <div key={idx} className="flex items-center gap-2.5 rounded-xl bg-white border border-[#7EB8B9] p-3 text-xs font-bold text-[#1F7A7B] shadow-sm">
-                <span className="text-base">🎓</span>
+                <Icon name="graduation-cap" size={16} strokeWidth={1.8} className="text-[#1F7A7B]" />
                 <span>{grade}</span>
               </div>
             ))}
@@ -801,7 +1257,7 @@ function TestimonialsEditor({ data, onChange }: { data: TestimonialsSection; onC
   };
 
   return (
-    <EditorCard title="آراء الطلاب" icon="💬">
+    <EditorCard title="آراء الطلاب" icon="message-square">
       <InputField label="عنوان القسم" value={data.title} onChange={(v) => onChange({ ...data, title: v })} />
       <div className="space-y-4">
         {data.testimonials.map((t, idx) => (
@@ -824,12 +1280,176 @@ function TestimonialsEditor({ data, onChange }: { data: TestimonialsSection; onC
 
 function ContactEditor({ data, onChange }: { data: ContactSection; onChange: (d: ContactSection) => void }) {
   return (
-    <EditorCard title="معلومات التواصل" icon="📞">
+    <EditorCard title="معلومات التواصل" icon="phone">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <InputField label="رقم الهاتف" value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="01143825523" />
         <InputField label="رقم واتساب" value={data.whatsapp} onChange={(v) => onChange({ ...data, whatsapp: v })} placeholder="01143825523" />
       </div>
       <InputField label="ملاحظة التواصل" value={data.note} onChange={(v) => onChange({ ...data, note: v })} multiline placeholder="أوقات التواصل والمواعيد..." />
+    </EditorCard>
+  );
+}
+
+function ModulesEditor({
+  title,
+  subtitle,
+  onChangeTitle,
+  onChangeSubtitle,
+  coursesCount,
+  modulesCount,
+}: {
+  title: string;
+  subtitle: string;
+  onChangeTitle: (v: string) => void;
+  onChangeSubtitle: (v: string) => void;
+  coursesCount: number;
+  modulesCount: number;
+}) {
+  return (
+    <EditorCard title="صفحة الكورسات والوحدات الدراسية" icon="book-open">
+      <div className="rounded-2xl border border-[#CFE6E6] bg-[#EAF4F4]/70 p-4 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2">
+          <Icon name="zap" size={14} className="text-[#1F7A7B]" />
+          <span className="font-bold text-[#0F4E4F]">
+            مربوط بقاعدة البيانات: تم جلب {coursesCount} كورس و {modulesCount} وحدة دراسية
+          </span>
+        </div>
+        <span className="text-[10px] bg-white text-[#1F7A7B] font-black px-2.5 py-1 rounded-full border border-[#7EB8B9] self-start sm:self-auto inline-flex items-center gap-1">
+          <span>بيانات فعلية</span>
+          <Icon name="check" size={11} strokeWidth={2.5} />
+        </span>
+      </div>
+
+      <InputField
+        label="عنوان الصفحة الرئيسي"
+        value={title}
+        onChange={onChangeTitle}
+        placeholder="الوحدات والكورسات الدراسية"
+      />
+      <InputField
+        label="النص التوضيحي والفرعي"
+        value={subtitle}
+        onChange={onChangeSubtitle}
+        placeholder="استكشف الكورسات الشاملة والوحدات التعليمية المتاحة للتسجيل..."
+        multiline
+      />
+    </EditorCard>
+  );
+}
+
+function LessonsEditor({
+  title,
+  subtitle,
+  onChangeTitle,
+  onChangeSubtitle,
+  lessonsCount,
+}: {
+  title: string;
+  subtitle: string;
+  onChangeTitle: (v: string) => void;
+  onChangeSubtitle: (v: string) => void;
+  lessonsCount: number;
+}) {
+  return (
+    <EditorCard title="صفحة مكتبة الدروس والتمارين" icon="play">
+      <div className="rounded-2xl border border-[#CFE6E6] bg-[#EAF4F4]/70 p-4 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2">
+          <Icon name="zap" size={14} className="text-[#1F7A7B]" />
+          <span className="font-bold text-[#0F4E4F]">
+            مربوط بقاعدة البيانات: تم جلب {lessonsCount} درس وحصة تعليمية
+          </span>
+        </div>
+        <span className="text-[10px] bg-white text-[#1F7A7B] font-black px-2.5 py-1 rounded-full border border-[#7EB8B9] self-start sm:self-auto inline-flex items-center gap-1">
+          <span>بيانات فعلية</span>
+          <Icon name="check" size={11} strokeWidth={2.5} />
+        </span>
+      </div>
+
+      <InputField
+        label="عنوان مكتبة الدروس"
+        value={title}
+        onChange={onChangeTitle}
+        placeholder="مكتبة الدروس والتمارين"
+      />
+      <InputField
+        label="النص التوضيحي للدروس"
+        value={subtitle}
+        onChange={onChangeSubtitle}
+        placeholder="تصفح وشاهد كل الدروس التفاعلية مع إمكانية مشاهدة الدروس التجريبية..."
+        multiline
+      />
+    </EditorCard>
+  );
+}
+
+function LessonDetailEditor({
+  data,
+  onChange,
+  lessons,
+  activeLessonId,
+  onSelectLesson,
+}: {
+  data: LessonDetailData;
+  onChange: (updated: Partial<LessonDetailData>) => void;
+  lessons: Array<{ id: string; title: string; courseTitle?: string }>;
+  activeLessonId?: string | null;
+  onSelectLesson: (id: string) => void;
+}) {
+  return (
+    <EditorCard title="صفحة مشاهدة الدرس ومشغل الفيديو" icon="tv">
+      {/* Lesson Selector */}
+      {lessons.length > 0 && (
+        <div className="mb-5 bg-white p-4 rounded-2xl border border-[#EEF0F2] shadow-xs">
+          <label className="block text-xs font-black text-[#1C2126] mb-2 flex items-center justify-between">
+            <span>اختر درساً لمعاينته وتعديله من قاعدة البيانات:</span>
+            <span className="text-[10px] text-[#1F7A7B] font-bold">({lessons.length} درس متاح)</span>
+          </label>
+          <select
+            value={activeLessonId || ""}
+            onChange={(e) => onSelectLesson(e.target.value)}
+            className="w-full rounded-xl border border-[#D3D7DC] bg-[#F7F8F9] py-2.5 px-3 text-xs font-bold text-[#1C2126] outline-none transition-all focus:border-[#1F7A7B] focus:bg-white focus:ring-2 focus:ring-[#1F7A7B]/20"
+          >
+            {lessons.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.courseTitle ? `[${l.courseTitle}] ` : ""}{l.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <InputField
+        label="عنوان الدرس المعروض"
+        value={data.title}
+        onChange={(v) => onChange({ title: v })}
+        placeholder="الدرس الأول: ..."
+      />
+      <InputField
+        label="اسم الكورس / الوحدة"
+        value={data.moduleName}
+        onChange={(v) => onChange({ moduleName: v })}
+        placeholder="وحدة الجبر — الصف الثالث الثانوي"
+      />
+      <InputField
+        label="وصف الدرس ومحتوى الشرح"
+        value={data.description}
+        onChange={(v) => onChange({ description: v })}
+        placeholder="في هذا الدرس نستعرض المفاهيم الأساسية..."
+        multiline
+      />
+      <InputField
+        label="ملاحظة وتوجيهات المعلم للطلاب"
+        value={data.teacherNote}
+        onChange={(v) => onChange({ teacherNote: v })}
+        placeholder="تأكد من مراجعة التمارين التطبيقية..."
+        multiline
+      />
+      <InputField
+        label="عنوان ملحق تمارين PDF"
+        value={data.pdfTitle}
+        onChange={(v) => onChange({ pdfTitle: v })}
+        placeholder="ملخص الدرس والتمارين التطبيقية (PDF)"
+      />
     </EditorCard>
   );
 }
@@ -891,7 +1511,8 @@ function EditableWrapper({
     >
       {children !== undefined ? children : value}
       <span className="opacity-0 group-hover/editable:opacity-100 transition-all inline-flex items-center gap-1 text-[10px] font-black bg-[#E8A83C] text-[#0F4E4F] px-2 py-0.5 rounded-full shadow-lg mr-2 align-middle border border-white/40">
-        ✏️ تعديل
+        <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        تعديل
       </span>
     </Component>
   );
@@ -902,6 +1523,9 @@ function EditableWrapper({
 function PreviewPage({
   data,
   teachingYears,
+  courses = [],
+  onViewAllCourses,
+  onViewCourse,
   theme,
   onEditText,
   onUpdateHero,
@@ -912,6 +1536,9 @@ function PreviewPage({
 }: {
   data: HomePageData;
   teachingYears: string[];
+  courses?: CourseItem[];
+  onViewAllCourses?: () => void;
+  onViewCourse?: (courseId: string) => void;
   theme: PlatformTheme;
   onEditText?: (config: EditModalConfig) => void;
   onUpdateHero?: (updated: Partial<HeroSection>) => void;
@@ -1149,7 +1776,7 @@ function PreviewPage({
                     borderRadius: theme.radius.cardCss,
                   }}
                 >
-                  🎓
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                 </div>
 
                 <h3 className="text-base font-bold mb-2" style={{ color: colors.textPrimary }}>
@@ -1171,6 +1798,121 @@ function PreviewPage({
           </div>
         </div>
       </section>
+
+      {/* 3.1 Real Courses Section from DB */}
+      {courses && courses.length > 0 && (
+        <section className="py-14" style={{ backgroundColor: colors.background }}>
+          <div className="mx-auto max-w-4xl px-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+              <div>
+                <div
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-2 shadow-sm"
+                  style={{ backgroundColor: `${colors.primary}15`, color: colors.primary }}
+                >
+                  <span className="h-2 w-2 rounded-full bg-current animate-pulse" />
+                  <span>الكورسات الحالية المنشورة</span>
+                </div>
+                <h2
+                  className="text-2xl font-black"
+                  style={{ fontFamily: theme.fonts.display, color: colors.textPrimary }}
+                >
+                  الكورسات والدورات المتاحة
+                </h2>
+                <p className="text-xs sm:text-sm mt-1" style={{ color: colors.textSecondary }}>
+                  اختر الدورة المناسبة لمرحلتك الدراسية واستكشف تفاصيل الحصص والدروس
+                </p>
+              </div>
+
+              {onViewAllCourses && (
+                <button
+                  onClick={onViewAllCourses}
+                  className="text-xs font-black px-4 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 hover:opacity-90 active:scale-95"
+                  style={{
+                    backgroundColor: colors.primary,
+                    color: "#FFFFFF",
+                    borderRadius: theme.radius.buttonCss,
+                  }}
+                >
+                  <span>عرض كل الوحدات</span>
+                  <span>←</span>
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {courses.map((course) => {
+                const modulesCount = course.modules?.length ?? 0;
+                const lessonsCount = (course.modules ?? []).reduce(
+                  (sum, m) => sum + (m.lessons?.length ?? 0),
+                  0
+                );
+                return (
+                  <div
+                    key={course.id}
+                    className="p-6 rounded-2xl flex flex-col justify-between transition-all hover:-translate-y-1 shadow-sm border"
+                    style={{
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                      borderRadius: theme.radius.cardCss,
+                      boxShadow: theme.shadow.card,
+                    }}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span
+                          className="px-2.5 py-1 text-[10px] font-black"
+                          style={{
+                            backgroundColor: `${colors.primary}15`,
+                            color: colors.primary,
+                            borderRadius: theme.radius.badge === "rounded-full" ? "9999px" : "6px",
+                          }}
+                        >
+                          {course.grade_levels?.name_ar || "المرحلة الثانوية"}
+                        </span>
+
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold" style={{ color: colors.textSecondary }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                          {modulesCount} وحدات • {lessonsCount} حصة
+                        </span>
+                      </div>
+
+                      <h3
+                        className="text-base sm:text-lg font-black mb-2"
+                        style={{ fontFamily: theme.fonts.display, color: colors.textPrimary }}
+                      >
+                        {course.title}
+                      </h3>
+
+                      <p
+                        className="text-xs leading-relaxed mb-6 line-clamp-2"
+                        style={{ color: colors.textSecondary }}
+                      >
+                        {course.description || "شرح شامل ومبسط للمنهج الدراسي مع ملخصات واختبارات دورية."}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        if (onViewCourse) onViewCourse(course.id);
+                        else if (onViewAllCourses) onViewAllCourses();
+                      }}
+                      className="w-full font-black text-xs py-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-95"
+                      style={{
+                        backgroundColor: colors.accent,
+                        color: colors.primary,
+                        borderRadius: theme.radius.buttonCss,
+                      }}
+                    >
+                      <span>استعراض محتوى الدورة</span>
+                      <span>←</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 4. Testimonials Section */}
       <section className="py-14" style={{ backgroundColor: colors.background }}>
@@ -1197,8 +1939,8 @@ function PreviewPage({
                   boxShadow: theme.shadow.card,
                 }}
               >
-                <div className="text-xl mb-3" style={{ color: colors.accent }}>
-                  ❝
+                <div className="mb-3" style={{ color: colors.accent }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
                 </div>
 
                 <EditableWrapper
@@ -1332,17 +2074,13 @@ function PreviewPage({
 function ModulesPagePreview({
   data,
   theme,
-  onEditText,
-  onUpdateTitle,
-  onUpdateSubtitle,
-  onUpdateModule,
+  isLiveData,
+  onViewLessons,
 }: {
   data: ModulesPageData;
   theme: PlatformTheme;
-  onEditText?: (config: EditModalConfig) => void;
-  onUpdateTitle?: (title: string) => void;
-  onUpdateSubtitle?: (subtitle: string) => void;
-  onUpdateModule?: (index: number, updated: Partial<ModuleItem>) => void;
+  isLiveData?: boolean;
+  onViewLessons?: () => void;
 }) {
   const colors = theme.light;
 
@@ -1357,6 +2095,20 @@ function ModulesPagePreview({
         minWidth: 360,
       }}
     >
+      {/* Live data indicator */}
+      {isLiveData && (
+        <div className="bg-[#2E9E5B] text-white px-4 py-2 text-xs font-bold flex items-center justify-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+          <span>بيانات حية من قاعدة البيانات — هذه هي الكورسات والوحدات الحقيقية التي أضفتها</span>
+        </div>
+      )}
+      {!isLiveData && (
+        <div className="bg-[#E0A429] text-[#1C2126] px-4 py-2 text-xs font-bold flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>بيانات تجريبية — أضف كورسات ودروس من تبويب "إدارة الدروس" لتظهر هنا بيانات حقيقية</span>
+        </div>
+      )}
+
       {/* Header Banner */}
       <section
         className="py-12 px-6 text-center shadow-sm"
@@ -1366,26 +2118,19 @@ function ModulesPagePreview({
         }}
       >
         <div className="mx-auto max-w-4xl">
-          <EditableWrapper
-            value={data.title}
-            label="عنوان صفحة الكورسات والوحدات"
-            onEditText={onEditText}
-            onSave={(v) => onUpdateTitle?.(v)}
-            as="h1"
+          <h1
             className="text-2xl sm:text-4xl font-black mb-3"
             style={{ fontFamily: theme.fonts.display, color: colors.textPrimary }}
-          />
+          >
+            {data.title}
+          </h1>
 
-          <EditableWrapper
-            value={data.subtitle}
-            label="وصف صفحة الكورسات والوحدات"
-            multiline
-            onEditText={onEditText}
-            onSave={(v) => onUpdateSubtitle?.(v)}
-            as="p"
+          <p
             className="text-xs sm:text-base max-w-xl mx-auto"
             style={{ color: colors.textSecondary }}
-          />
+          >
+            {data.subtitle}
+          </p>
 
           {/* Search bar mockup */}
           <div className="mt-8 mx-auto max-w-lg relative">
@@ -1400,106 +2145,104 @@ function ModulesPagePreview({
                 color: colors.textPrimary,
               }}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[#8A929B]">🔍</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A929B]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </span>
           </div>
         </div>
       </section>
 
       {/* Modules Grid */}
       <section className="mx-auto max-w-5xl px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {data.modules.map((m, i) => (
-            <div
-              key={m.id}
-              className="p-6 flex flex-col justify-between transition-all hover:-translate-y-1"
-              style={{
-                backgroundColor: colors.surface,
-                border: `1px solid ${colors.border}`,
-                borderRadius: theme.radius.cardCss,
-                boxShadow: theme.shadow.card,
-              }}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-4">
-                  <span
-                    className="px-2.5 py-1 text-[10px] font-black"
+        {data.modules.length === 0 ? (
+          <div className="text-center py-20 px-6 rounded-3xl border-2 border-dashed border-[#D3D7DC] bg-[#F7F8F9] max-w-xl mx-auto">
+            <div className="flex justify-center mb-4 text-[#D3D7DC]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <h3 className="text-base font-black text-[#1C2126] mb-1">لم يتم إضافة وحدات دراسية بعد</h3>
+            <p className="text-xs text-[#8A929B] leading-relaxed">
+              أضف دورات ووحدات جديدة من قسم "إدارة الدروس" في لوحة التحكم، وستظهر فوراً هنا لطلابك في المنصة.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {data.modules.map((m) => (
+              <div
+                key={m.id}
+                className="p-6 flex flex-col justify-between transition-all hover:-translate-y-1"
+                style={{
+                  backgroundColor: colors.surface,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: theme.radius.cardCss,
+                  boxShadow: theme.shadow.card,
+                }}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <span
+                      className="px-2.5 py-1 text-[10px] font-black"
+                      style={{
+                        backgroundColor: `${colors.primary}15`,
+                        color: colors.primary,
+                        borderRadius: theme.radius.badge === "rounded-full" ? "9999px" : "6px",
+                      }}
+                    >
+                      {m.badge}
+                    </span>
+
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold" style={{ color: colors.textSecondary }}>
+                      <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span>{m.duration}</span>
+                    </span>
+                  </div>
+
+                  <h3
+                    className="text-base font-black mb-3"
+                    style={{ fontFamily: theme.fonts.display, color: colors.textPrimary }}
+                  >
+                    {m.title}
+                  </h3>
+
+                  <p
+                    className="text-xs leading-relaxed mb-6"
+                    style={{ color: colors.textSecondary }}
+                  >
+                    {m.description}
+                  </p>
+                </div>
+
+                <div>
+                  {/* Progress bar mockup */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between text-[10px] font-bold mb-1" style={{ color: colors.textSecondary }}>
+                      <span>معدل الإنجاز</span>
+                      <span>{m.progress}%</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ backgroundColor: `${colors.primary}20` }}>
+                      <div className="h-full transition-all" style={{ width: `${m.progress}%`, backgroundColor: colors.accent }} />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={onViewLessons}
+                    className="w-full font-black text-xs py-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-95"
                     style={{
-                      backgroundColor: `${colors.primary}15`,
-                      color: colors.primary,
-                      borderRadius: theme.radius.badge === "rounded-full" ? "9999px" : "6px",
+                      backgroundColor: colors.primary,
+                      color: "#FFFFFF",
+                      borderRadius: theme.radius.buttonCss,
                     }}
                   >
-                    <EditableWrapper
-                      value={m.badge}
-                      label="شارة الوحدة"
-                      onEditText={onEditText}
-                      onSave={(v) => onUpdateModule?.(i, { badge: v })}
-                    >
-                      <span>{m.badge}</span>
-                    </EditableWrapper>
-                  </span>
-
-                  <span className="text-[10px] font-bold" style={{ color: colors.textSecondary }}>
-                    <EditableWrapper
-                      value={m.duration}
-                      label="مدة الوحدة"
-                      onEditText={onEditText}
-                      onSave={(v) => onUpdateModule?.(i, { duration: v })}
-                    >
-                      <span>⏱️ {m.duration}</span>
-                    </EditableWrapper>
-                  </span>
+                    <span>عرض دروس الوحدة ({m.lessonsCount} درس)</span>
+                    <span>←</span>
+                  </button>
                 </div>
-
-                <EditableWrapper
-                  value={m.title}
-                  label="عنوان الوحدة"
-                  onEditText={onEditText}
-                  onSave={(v) => onUpdateModule?.(i, { title: v })}
-                  as="h3"
-                  className="text-base font-black mb-3"
-                  style={{ fontFamily: theme.fonts.display, color: colors.textPrimary }}
-                />
-
-                <EditableWrapper
-                  value={m.description}
-                  label="وصف الوحدة"
-                  multiline
-                  onEditText={onEditText}
-                  onSave={(v) => onUpdateModule?.(i, { description: v })}
-                  as="p"
-                  className="text-xs leading-relaxed mb-6"
-                  style={{ color: colors.textSecondary }}
-                />
               </div>
-
-              <div>
-                {/* Progress bar mockup */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between text-[10px] font-bold mb-1" style={{ color: colors.textSecondary }}>
-                    <span>معدل الإنجاز</span>
-                    <span>{m.progress}%</span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ backgroundColor: `${colors.primary}20` }}>
-                    <div className="h-full transition-all" style={{ width: `${m.progress}%`, backgroundColor: colors.accent }} />
-                  </div>
-                </div>
-
-                <button
-                  className="w-full font-black text-xs py-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: colors.primary,
-                    color: "#FFFFFF",
-                    borderRadius: theme.radius.buttonCss,
-                  }}
-                >
-                  <span>عرض دروس الوحدة ({m.lessonsCount} درس)</span>
-                  <span>←</span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
@@ -1510,19 +2253,22 @@ function ModulesPagePreview({
 function LessonsPagePreview({
   data,
   theme,
-  onEditText,
-  onUpdateTitle,
-  onUpdateSubtitle,
-  onUpdateLesson,
+  isLiveData,
+  onSelectLesson,
 }: {
   data: LessonsPageData;
   theme: PlatformTheme;
-  onEditText?: (config: EditModalConfig) => void;
-  onUpdateTitle?: (title: string) => void;
-  onUpdateSubtitle?: (subtitle: string) => void;
-  onUpdateLesson?: (index: number, updated: Partial<LessonItem>) => void;
+  isLiveData?: boolean;
+  onSelectLesson?: (lessonId: string) => void;
 }) {
   const colors = theme.light;
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredLessons = data.lessons.filter((l) =>
+    !searchQuery.trim() ||
+    l.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    l.module.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div
@@ -1535,6 +2281,20 @@ function LessonsPagePreview({
         minWidth: 360,
       }}
     >
+      {/* Live data indicator */}
+      {isLiveData && (
+        <div className="bg-[#2E9E5B] text-white px-4 py-2 text-xs font-bold flex items-center justify-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+          <span>بيانات حية من قاعدة البيانات — هذه هي الدروس الحقيقية التي أضفتها</span>
+        </div>
+      )}
+      {!isLiveData && (
+        <div className="bg-[#E0A429] text-[#1C2126] px-4 py-2 text-xs font-bold flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>بيانات تجريبية — أضف حصص ودروس من تبويب "إدارة الدروس" لتظهر هنا بيانات حقيقية</span>
+        </div>
+      )}
+
       {/* Header Banner */}
       <section
         className="py-12 px-6 text-center shadow-sm"
@@ -1544,114 +2304,151 @@ function LessonsPagePreview({
         }}
       >
         <div className="mx-auto max-w-4xl">
-          <EditableWrapper
-            value={data.title}
-            label="عنوان صفحة الدروس"
-            onEditText={onEditText}
-            onSave={(v) => onUpdateTitle?.(v)}
-            as="h1"
+          <h1
             className="text-2xl sm:text-4xl font-black mb-3"
             style={{ fontFamily: theme.fonts.display, color: colors.textPrimary }}
-          />
+          >
+            {data.title}
+          </h1>
 
-          <EditableWrapper
-            value={data.subtitle}
-            label="وصف صفحة الدروس"
-            multiline
-            onEditText={onEditText}
-            onSave={(v) => onUpdateSubtitle?.(v)}
-            as="p"
+          <p
             className="text-xs sm:text-base max-w-xl mx-auto"
             style={{ color: colors.textSecondary }}
-          />
+          >
+            {data.subtitle}
+          </p>
+
+          {/* Real-time search bar */}
+          <div className="mt-8 mx-auto max-w-lg relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="ابحث عن اسم الدرس أو الدورة..."
+              className="w-full rounded-2xl py-3 px-5 pr-11 pl-10 text-xs font-bold shadow-sm outline-none transition-all focus:ring-2 focus:ring-[#1F7A7B]/20"
+              style={{
+                backgroundColor: colors.background,
+                border: `1px solid ${colors.border}`,
+                color: colors.textPrimary,
+              }}
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A929B]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </span>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A929B] hover:text-[#1C2126]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
       {/* Lessons List */}
       <section className="mx-auto max-w-4xl px-6 py-10">
-        <div className="space-y-4">
-          {data.lessons.map((l, i) => (
-            <div
-              key={l.id}
-              className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all hover:-translate-y-0.5"
-              style={{
-                backgroundColor: colors.surface,
-                border: `1px solid ${colors.border}`,
-                borderRadius: theme.radius.cardCss,
-                boxShadow: theme.shadow.card,
-              }}
-            >
-              <div className="flex items-center gap-4">
-                <div
-                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-xl shadow-md"
-                  style={{
-                    backgroundColor: colors.primary,
-                    color: colors.accent,
-                  }}
-                >
-                  ▶
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className="px-2 py-0.5 text-[10px] font-bold"
-                      style={{
-                        backgroundColor: l.isFree ? `${colors.accent}30` : `${colors.primary}15`,
-                        color: colors.primary,
-                        borderRadius: "9999px",
-                      }}
-                    >
-                      {l.isFree ? "✨ درس مجاني" : "🔒 مشتركين"}
-                    </span>
-                    <EditableWrapper
-                      value={l.module}
-                      label="اسم الوحدة"
-                      onEditText={onEditText}
-                      onSave={(v) => onUpdateLesson?.(i, { module: v })}
-                      className="text-[10px] font-bold"
-                      style={{ color: colors.textSecondary }}
-                    />
+        {filteredLessons.length === 0 ? (
+          <div className="text-center py-20 px-6 rounded-3xl border-2 border-dashed border-[#D3D7DC] bg-[#F7F8F9] max-w-xl mx-auto">
+            <div className="flex justify-center mb-4 text-[#D3D7DC]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            </div>
+            <h3 className="text-base font-black text-[#1C2126] mb-1">لا توجد دروس مطابقة</h3>
+            <p className="text-xs text-[#8A929B] leading-relaxed">
+              {searchQuery ? "جرّب البحث بكلمة أخرى أو تصفح باقي الدروس." : "أضف حصص ودروس جديدة من تبويب إدارة الدروس لتظهر هنا."}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredLessons.map((l) => (
+              <div
+                key={l.id}
+                className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all hover:-translate-y-0.5"
+                style={{
+                  backgroundColor: colors.surface,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: theme.radius.cardCss,
+                  boxShadow: theme.shadow.card,
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    onClick={() => onSelectLesson?.(l.id)}
+                    className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-xl shadow-md cursor-pointer transition-transform hover:scale-105"
+                    style={{
+                      backgroundColor: colors.primary,
+                      color: colors.accent,
+                    }}
+                  >
+                    ▶
                   </div>
 
-                  <EditableWrapper
-                    value={l.title}
-                    label="عنوان الدرس"
-                    onEditText={onEditText}
-                    onSave={(v) => onUpdateLesson?.(i, { title: v })}
-                    as="h3"
-                    className="text-sm sm:text-base font-bold"
-                    style={{ color: colors.textPrimary }}
-                  />
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span
+                        className="px-2 py-0.5 text-[10px] font-bold"
+                        style={{
+                          backgroundColor: l.isFree ? `${colors.accent}30` : `${colors.primary}15`,
+                          color: colors.primary,
+                          borderRadius: "9999px",
+                        }}
+                      >
+                        {l.isFree ? (
+                          <span className="inline-flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+                            درس مجاني
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            مشتركين
+                          </span>
+                        )}
+                      </span>
+                      <span
+                        className="text-[10px] font-bold"
+                        style={{ color: colors.textSecondary }}
+                      >
+                        {l.module}
+                      </span>
+                    </div>
+
+                    <h3
+                      onClick={() => onSelectLesson?.(l.id)}
+                      className="text-sm sm:text-base font-bold cursor-pointer hover:underline"
+                      style={{ color: colors.textPrimary }}
+                    >
+                      {l.title}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 self-end sm:self-auto">
+                  <span
+                    className="inline-flex items-center gap-1 text-xs font-bold"
+                    style={{ color: colors.textSecondary }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {l.duration}
+                  </span>
+
+                  <button
+                    onClick={() => onSelectLesson?.(l.id)}
+                    className="px-4 py-2 text-xs font-black rounded-xl transition-all shadow-sm hover:opacity-90 active:scale-95"
+                    style={{
+                      backgroundColor: colors.accent,
+                      color: colors.primary,
+                      borderRadius: theme.radius.buttonCss,
+                    }}
+                  >
+                    مشاهدة
+                  </button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-4 self-end sm:self-auto">
-                <EditableWrapper
-                  value={l.duration}
-                  label="مدة الفيديو"
-                  onEditText={onEditText}
-                  onSave={(v) => onUpdateLesson?.(i, { duration: v })}
-                  className="text-xs font-bold"
-                  style={{ color: colors.textSecondary }}
-                >
-                  <span>⏱️ {l.duration}</span>
-                </EditableWrapper>
-
-                <button
-                  className="px-4 py-2 text-xs font-black rounded-xl transition-all shadow-sm"
-                  style={{
-                    backgroundColor: colors.accent,
-                    color: colors.primary,
-                    borderRadius: theme.radius.buttonCss,
-                  }}
-                >
-                  مشاهدة
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
@@ -1662,17 +2459,33 @@ function LessonsPagePreview({
 function LessonDetailPreview({
   data,
   theme,
+  videoUrl,
+  playlistLessons = [],
+  currentLessonId,
+  onSelectLesson,
   onEditText,
   onUpdateDetail,
 }: {
   data: LessonDetailData;
   theme: PlatformTheme;
+  videoUrl?: string | null;
+  playlistLessons?: Array<{
+    id: string;
+    title: string;
+    duration?: string;
+    content_type?: string;
+    video_url?: string | null;
+  }>;
+  currentLessonId?: string;
+  onSelectLesson?: (lessonId: string) => void;
   onEditText?: (config: EditModalConfig) => void;
   onUpdateDetail?: (updated: Partial<LessonDetailData>) => void;
 }) {
   const colors = theme.light;
   const [activeTab, setActiveTab] = useState<"overview" | "pdf">("overview");
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const youtubeEmbedUrl = getYouTubeEmbedUrl(videoUrl);
 
   return (
     <div
@@ -1694,10 +2507,16 @@ function LessonDetailPreview({
             onEditText={onEditText}
             onSave={(v) => onUpdateDetail?.({ moduleName: v })}
           >
-            <span>📚 {data.moduleName}</span>
+            <span className="inline-flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              {data.moduleName}
+            </span>
           </EditableWrapper>
 
-          <span className="text-[10px] text-white/70">مشغّل فيديو دُرُوس التفاعلي 🎬</span>
+          <span className="inline-flex items-center gap-1.5 text-[10px] text-white/70">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            مشغّل فيديو دُرُوس التفاعلي
+          </span>
         </div>
       </div>
 
@@ -1707,25 +2526,49 @@ function LessonDetailPreview({
         {/* Left 2 Cols: Video Player & Tabs */}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* Simulated Video Container */}
-          <div
-            className="relative aspect-video w-full rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center group"
-            style={{ backgroundColor: "#0D1420" }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
-
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8A83C] text-[#0F4E4F] text-2xl font-black shadow-2xl transition-transform hover:scale-110 active:scale-95"
+          {/* Video Container (YouTube Embed or Simulated Player) */}
+          {youtubeEmbedUrl ? (
+            <div
+              className="relative aspect-video w-full rounded-2xl overflow-hidden shadow-2xl bg-black border border-white/10"
             >
-              {isPlaying ? "⏸" : "▶"}
-            </button>
-
-            <div className="absolute bottom-4 right-4 left-4 z-10 flex items-center justify-between text-white text-xs font-bold">
-              <span>{isPlaying ? "جاري التشغيل..." : "اضغط للتشغيل تجريبياً"}</span>
-              <span className="bg-white/20 px-2 py-0.5 rounded text-[10px]">1080p Full HD</span>
+              <iframe
+                src={youtubeEmbedUrl}
+                title={data.title}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
             </div>
-          </div>
+          ) : (
+            <div
+              className="relative aspect-video w-full rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center group"
+              style={{ backgroundColor: "#0D1420" }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+
+              <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8A83C] text-[#0F4E4F] shadow-2xl transition-transform hover:scale-110 active:scale-95"
+                title={isPlaying ? "إيقاف مؤقت" : "تشغيل الفيديو"}
+              >
+                {isPlaying ? (
+                  <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                    <rect x="6" y="5" width="4" height="14" rx="1.5" />
+                    <rect x="14" y="5" width="4" height="14" rx="1.5" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 fill-current translate-x-[-1px]" viewBox="0 0 24 24">
+                    <polygon points="6 4 20 12 6 20 6 4" />
+                  </svg>
+                )}
+              </button>
+
+              <div className="absolute bottom-4 right-4 left-4 z-10 flex items-center justify-between text-white text-xs font-bold">
+                <span>{isPlaying ? "جاري تشغيل الفيديو..." : "مشغّل فيديو تجريبي — اضغط للتشغيل"}</span>
+                <span className="bg-white/20 px-2 py-0.5 rounded text-[10px]">1080p Full HD</span>
+              </div>
+            </div>
+          )}
 
           {/* Lesson Header */}
           <div
@@ -1750,23 +2593,25 @@ function LessonDetailPreview({
             <div className="flex items-center gap-2 border-b border-[#EEF0F2] pb-3 mb-4">
               <button
                 onClick={() => setActiveTab("overview")}
-                className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
+                className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black rounded-xl transition-all ${
                   activeTab === "overview"
                     ? "bg-[#EAF4F4] text-[#1F7A7B]"
                     : "text-[#4A5158] hover:bg-[#F7F8F9]"
                 }`}
               >
-                📄 الوصف والملاحظات
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                الوصف والملاحظات
               </button>
               <button
                 onClick={() => setActiveTab("pdf")}
-                className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
+                className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black rounded-xl transition-all ${
                   activeTab === "pdf"
                     ? "bg-[#EAF4F4] text-[#1F7A7B]"
                     : "text-[#4A5158] hover:bg-[#F7F8F9]"
                 }`}
               >
-                📎 ملحقات PDF والتمارين
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l7.9-7.9"/></svg>
+                ملحقات PDF والتمارين
               </button>
             </div>
 
@@ -1787,7 +2632,10 @@ function LessonDetailPreview({
                 <div
                   className="p-4 rounded-xl border border-[#CFE6E6] bg-[#EAF4F4]/50"
                 >
-                  <span className="block text-xs font-black text-[#0F4E4F] mb-1">💡 ملاحظة المعلم للطلاب:</span>
+                  <span className="flex items-center gap-1.5 text-xs font-black text-[#0F4E4F] mb-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                    ملاحظة المعلم للطلاب:
+                  </span>
                   <EditableWrapper
                     value={data.teacherNote}
                     label="ملاحظة المعلم"
@@ -1804,7 +2652,9 @@ function LessonDetailPreview({
             {activeTab === "pdf" && (
               <div className="p-4 rounded-xl border border-[#D3D7DC] bg-[#F7F8F9] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">📄</span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EAF4F4] text-[#1F7A7B]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  </div>
                   <EditableWrapper
                     value={data.pdfTitle}
                     label="عنوان ملف PDF الملحق"
@@ -1833,30 +2683,71 @@ function LessonDetailPreview({
             borderRadius: theme.radius.cardCss,
           }}
         >
-          <h3
-            className="text-sm font-black border-b border-[#EEF0F2] pb-3"
-            style={{ color: colors.textPrimary }}
-          >
-            📋 قائمة دروس الوحدة (6 دروس)
-          </h3>
+          <div className="flex items-center justify-between border-b border-[#EEF0F2] pb-3">
+            <h3
+              className="inline-flex items-center gap-1.5 text-sm font-black"
+              style={{ color: colors.textPrimary }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              قائمة دروس الوحدة ({playlistLessons.length > 0 ? playlistLessons.length : 6} دروس)
+            </h3>
+            {playlistLessons.length > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EAF4F4] text-[#1F7A7B]">
+                تفاعلية
+              </span>
+            )}
+          </div>
 
           <div className="space-y-2 text-xs">
-            <div className="p-3 rounded-xl bg-[#EAF4F4] text-[#1F7A7B] font-bold border border-[#CFE6E6] flex items-center justify-between">
-              <span>1. مقدمة الأعداد المركبة 🟢</span>
-              <span className="text-[10px]">نشط الآن</span>
-            </div>
-            <div className="p-3 rounded-xl hover:bg-[#F7F8F9] text-[#4A5158] font-medium flex items-center justify-between">
-              <span>2. الشكل الجبري والشكل القطبي</span>
-              <span className="text-[10px]">38 د</span>
-            </div>
-            <div className="p-3 rounded-xl hover:bg-[#F7F8F9] text-[#4A5158] font-medium flex items-center justify-between">
-              <span>3. نظرية ديموافر وتطبيقاتها</span>
-              <span className="text-[10px]">45 د</span>
-            </div>
-            <div className="p-3 rounded-xl hover:bg-[#F7F8F9] text-[#4A5158] font-medium flex items-center justify-between opacity-60">
-              <span>4. الجذور التكعيبية للواحد الصحيح 🔒</span>
-              <span className="text-[10px]">مشتركين</span>
-            </div>
+            {playlistLessons.length > 0 ? (
+              playlistLessons.map((item, idx) => {
+                const isActive = item.id === currentLessonId;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onSelectLesson?.(item.id)}
+                    className={`w-full text-right p-3 rounded-xl transition-all flex items-center justify-between ${
+                      isActive
+                        ? "bg-[#EAF4F4] text-[#1F7A7B] font-black border-2 border-[#1F7A7B]/40 shadow-sm"
+                        : "hover:bg-[#F7F8F9] text-[#4A5158] font-medium border border-transparent"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {isActive ? (
+                        <span className="flex h-2 w-2 rounded-full bg-[#2E9E5B] flex-shrink-0" />
+                      ) : (
+                        <svg className="w-3.5 h-3.5 text-[#8A929B] flex-shrink-0 fill-current" viewBox="0 0 24 24">
+                          <polygon points="6 4 19 12 6 20 6 4" />
+                        </svg>
+                      )}
+                      <span className="line-clamp-1">{idx + 1}. {item.title}</span>
+                    </div>
+                    <span className="text-[10px] opacity-75">
+                      {isActive ? "نشط الآن" : item.duration || "فيديو"}
+                    </span>
+                  </button>
+                );
+              })
+            ) : (
+              <>
+                <div className="p-3 rounded-xl bg-[#EAF4F4] text-[#1F7A7B] font-bold border border-[#CFE6E6] flex items-center justify-between">
+                  <span className="inline-flex items-center gap-2"><span className="flex h-2 w-2 rounded-full bg-[#2E9E5B] flex-shrink-0" />1. مقدمة الأعداد المركبة</span>
+                  <span className="text-[10px]">نشط الآن</span>
+                </div>
+                <div className="p-3 rounded-xl hover:bg-[#F7F8F9] text-[#4A5158] font-medium flex items-center justify-between">
+                  <span>2. الشكل الجبري والشكل القطبي</span>
+                  <span className="text-[10px]">38 د</span>
+                </div>
+                <div className="p-3 rounded-xl hover:bg-[#F7F8F9] text-[#4A5158] font-medium flex items-center justify-between">
+                  <span>3. نظرية ديموافر وتطبيقاتها</span>
+                  <span className="text-[10px]">45 د</span>
+                </div>
+                <div className="p-3 rounded-xl hover:bg-[#F7F8F9] text-[#4A5158] font-medium flex items-center justify-between opacity-60">
+                  <span className="inline-flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>4. الجذور التكعيبية للواحد الصحيح</span>
+                  <span className="text-[10px]">مشتركين</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
