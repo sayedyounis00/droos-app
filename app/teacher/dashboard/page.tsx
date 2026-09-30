@@ -21,6 +21,7 @@ export default function TeacherDashboardPage() {
       <HomePageBuilder
         onBack={() => setShowBuilder(false)}
         teacherGrades={teacher?.grades ?? []}
+        teacher={teacher}
       />
     );
   }
