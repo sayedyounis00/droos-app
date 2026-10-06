@@ -1,17 +1,24 @@
 import { useState, useCallback, useRef } from 'react';
 
+export type ToastType = 'success' | 'error' | 'info';
+
+export interface ToastState {
+  message: string;
+  type: ToastType;
+}
+
 export function useToast(duration = 3500) {
-  const [toastMessage, setToastMessage] = useState('');
+  const [toast, setToast] = useState<ToastState>({ message: '', type: 'success' });
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const showToast = useCallback(
-    (message: string) => {
-      setToastMessage(message);
+    (message: string, type: ToastType = 'success') => {
+      setToast({ message, type });
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
       timeoutRef.current = setTimeout(() => {
-        setToastMessage('');
+        setToast({ message: '', type: 'success' });
       }, duration);
     },
     [duration]
@@ -21,11 +28,13 @@ export function useToast(duration = 3500) {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    setToastMessage('');
+    setToast({ message: '', type: 'success' });
   }, []);
 
+  // Legacy compat: expose toastMessage as plain string
   return {
-    toastMessage,
+    toast,
+    toastMessage: toast.message,
     showToast,
     hideToast,
   };

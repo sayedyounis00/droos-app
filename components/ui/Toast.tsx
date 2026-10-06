@@ -9,11 +9,17 @@ interface ToastProps {
 export function Toast({ message, type = 'success' }: ToastProps) {
   if (!message) return null;
 
+  const styleByType = {
+    success: 'bg-[#0F4E4F] text-white border-[#166465]/50 shadow-[#0F4E4F]/25',
+    error: 'bg-[#7A1D1D] text-white border-[#D9483D]/60 shadow-[#D9483D]/30',
+    info: 'bg-[#1E3A8A] text-white border-[#3B82F6]/50 shadow-[#1E3A8A]/25',
+  }[type];
+
   return (
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-6 start-6 z-50 flex items-center gap-3 rounded-2xl bg-[#0F4E4F] px-5 py-3.5 text-sm font-semibold text-white shadow-xl shadow-[#0F4E4F]/25 border border-[#166465]/40 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
+      className={`fixed bottom-6 start-6 z-50 flex items-center gap-3 rounded-2xl px-5 py-3.5 text-sm font-semibold shadow-xl border transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 ${styleByType}`}
     >
       {type === 'success' && (
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2E9E5B] text-white">

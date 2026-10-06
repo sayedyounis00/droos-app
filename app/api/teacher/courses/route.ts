@@ -1,22 +1,24 @@
 import { NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { CourseItem, EGYPTIAN_GRADE_LEVELS } from '@/lib/droos-data';
+import { CourseItem, EGYPTIAN_GRADE_LEVELS, getGradeLevelUuid, isValidUuid } from '@/lib/droos-data';
 import { apiSuccess, apiError } from '@/lib/api/responses';
 import { COURSE_SELECT_QUERY } from '@/lib/queries/droos-queries';
 import { getAuthenticatedTeacher } from '@/lib/auth/teacher-auth';
 
 /**
- * Resolves a static grade ID (e.g. 'grd-sec-1') to the real database UUID.
- * If the ID is already a real UUID (not found in static list), returns it unchanged.
+ * Resolves any grade ID (e.g. 'grd-prep-3', 'الصف الثالث الإعدادي', or real UUID) to the database UUID.
  */
 async function resolveGradeId(gradeId: string): Promise<string> {
+  const mappedUuid = getGradeLevelUuid(gradeId);
+  if (mappedUuid) return mappedUuid;
+
   const staticGrade = EGYPTIAN_GRADE_LEVELS.find((g) => g.id === gradeId);
-  if (!staticGrade) return gradeId;
+  const nameToSearch = staticGrade?.name_ar ?? gradeId;
 
   const { data } = await supabase
     .from('grade_levels')
     .select('id')
-    .eq('name_ar', staticGrade.name_ar)
+    .eq('name_ar', nameToSearch)
     .maybeSingle();
 
   return data?.id ?? gradeId;
@@ -79,6 +81,9 @@ export async function POST(request: NextRequest) {
     }
 
     const validGradeLevelId = await resolveGradeId(grade_level_id);
+    if (!isValidUuid(validGradeLevelId)) {
+      return apiError('معرف الصف الدراسي غير صالح أو غير موجود بقاعدة البيانات', 400);
+    }
 
     const { data, error } = await supabase
       .from('courses')
@@ -127,7 +132,13 @@ export async function PUT(request: NextRequest) {
 
     const updateData: Record<string, string> = { title: title.trim() };
     if (description !== undefined) updateData.description = (description ?? '').trim();
-    if (grade_level_id) updateData.grade_level_id = await resolveGradeId(grade_level_id);
+    if (grade_level_id) {
+      const resolved = await resolveGradeId(grade_level_id);
+      if (!isValidUuid(resolved)) {
+        return apiError('معرف الصف الدراسي غير صالح', 400);
+      }
+      updateData.grade_level_id = resolved;
+    }
 
     const { data, error } = await supabase
       .from('courses')

@@ -36,7 +36,7 @@ export function useDroosData(initialTeacherId?: string) {
   const [expandedCourseIds, setExpandedCourseIds] = useState<string[]>([]);
   const [expandedModuleIds, setExpandedModuleIds] = useState<string[]>([]);
 
-  const { toastMessage, showToast } = useToast();
+  const { toast, toastMessage, showToast } = useToast();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -134,11 +134,11 @@ export function useDroosData(initialTeacherId?: string) {
         setExpandedCourseIds((prev) => [...prev, fullCourseItem.id]);
         return true;
       } else {
-        showToast(data.error ?? 'حدث خطأ أثناء إضافة الدورة');
+        showToast(data.error ?? 'حدث خطأ أثناء إضافة الدورة', 'error');
         return false;
       }
     } catch {
-      showToast('حدث خطأ أثناء إضافة الدورة');
+      showToast('حدث خطأ أثناء إضافة الدورة', 'error');
       return false;
     }
   };
@@ -167,11 +167,11 @@ export function useDroosData(initialTeacherId?: string) {
         showToast('تم تحديث بيانات الدورة بنجاح');
         return true;
       } else {
-        showToast(data.error ?? 'حدث خطأ أثناء تعديل الدورة');
+        showToast(data.error ?? 'حدث خطأ أثناء تعديل الدورة', 'error');
         return false;
       }
     } catch {
-      showToast('حدث خطأ أثناء تعديل الدورة');
+      showToast('حدث خطأ أثناء تعديل الدورة', 'error');
       return false;
     }
   };
@@ -193,10 +193,10 @@ export function useDroosData(initialTeacherId?: string) {
         showToast('تم حذف الدورة التعليمية بنجاح');
         setCourses((prev) => prev.filter((c) => c.id !== courseId));
       } else {
-        showToast(data.error ?? 'حدث خطأ أثناء حذف الدورة');
+        showToast(data.error ?? 'حدث خطأ أثناء حذف الدورة', 'error');
       }
     } catch {
-      showToast('حدث خطأ أثناء حذف الدورة');
+      showToast('حدث خطأ أثناء حذف الدورة', 'error');
     }
   };
 
@@ -255,10 +255,10 @@ export function useDroosData(initialTeacherId?: string) {
         );
         showToast('تم تحديث اسم الدرس بنجاح');
       } else {
-        showToast(data.error ?? 'حدث خطأ أثناء تعديل اسم الدرس');
+        showToast(data.error ?? 'حدث خطأ أثناء تعديل اسم الدرس', 'error');
       }
     } catch {
-      showToast('حدث خطأ أثناء تعديل اسم الدرس');
+      showToast('حدث خطأ أثناء تعديل اسم الدرس', 'error');
     }
   };
 
@@ -280,10 +280,10 @@ export function useDroosData(initialTeacherId?: string) {
           )
         );
       } else {
-        showToast(data.error ?? 'حدث خطأ أثناء حذف الدرس');
+        showToast(data.error ?? 'حدث خطأ أثناء حذف الدرس', 'error');
       }
     } catch {
-      showToast('حدث خطأ أثناء حذف الدرس');
+      showToast('حدث خطأ أثناء حذف الدرس', 'error');
     }
   };
 
@@ -328,10 +328,10 @@ export function useDroosData(initialTeacherId?: string) {
           })
         );
       } else {
-        showToast(data.error ?? 'حدث خطأ أثناء إضافة الحصة');
+        showToast(data.error ?? 'حدث خطأ أثناء إضافة الحصة', 'error');
       }
     } catch {
-      showToast('حدث خطأ أثناء إضافة الحصة');
+      showToast('حدث خطأ أثناء إضافة الحصة', 'error');
     }
   };
 
@@ -372,10 +372,10 @@ export function useDroosData(initialTeacherId?: string) {
         );
         showToast('تم تحديث الحصة بنجاح');
       } else {
-        showToast(data.error ?? 'حدث خطأ أثناء تعديل الحصة');
+        showToast(data.error ?? 'حدث خطأ أثناء تعديل الحصة', 'error');
       }
     } catch {
-      showToast('حدث خطأ أثناء تعديل الحصة');
+      showToast('حدث خطأ أثناء تعديل الحصة', 'error');
     }
   };
 
@@ -404,10 +404,10 @@ export function useDroosData(initialTeacherId?: string) {
           }))
         );
       } else {
-        showToast(data.error ?? 'حدث خطأ أثناء حذف الحصة');
+        showToast(data.error ?? 'حدث خطأ أثناء حذف الحصة', 'error');
       }
     } catch {
-      showToast('حدث خطأ أثناء حذف الحصة');
+      showToast('حدث خطأ أثناء حذف الحصة', 'error');
     }
   };
 
@@ -430,6 +430,7 @@ export function useDroosData(initialTeacherId?: string) {
     addLesson,
     updateLesson,
     deleteLesson,
+    toast,
     toastMessage,
     showToast,
   };
