@@ -38,6 +38,7 @@ export default function DroosTableManager({
     addLesson,
     updateLesson,
     deleteLesson,
+    toast,
     toastMessage,
   } = useDroosData(initialTeacherId);
 
@@ -47,7 +48,7 @@ export default function DroosTableManager({
   return (
     <div className="space-y-6">
       {/* Toast Alert */}
-      <Toast message={toastMessage} />
+      <Toast message={toast.message} type={toast.type} />
 
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl border border-[#EEF0F2] bg-white p-6 shadow-sm">
