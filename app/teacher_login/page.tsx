@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { FormInput } from "@/components/ui/FormInput";
@@ -8,6 +9,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Spinner } from "@/components/ui/Spinner";
 
 export default function TeacherLoginPage() {
+  const router = useRouter();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -51,12 +53,13 @@ export default function TeacherLoginPage() {
       setSuccessMessage("تم تسجيل الدخول بنجاح! جاري التوجيه إلى لوحة التحكم...");
       
       // Store session in localStorage for fast UI hydration
-      if (typeof window !== "undefined" && data.teacher) {
+      if (data.teacher) {
         localStorage.setItem("droos_teacher", JSON.stringify(data.teacher));
       }
 
+      const redirectTo = data.redirectTo || "/teacher/dashboard";
       setTimeout(() => {
-        window.location.href = data.redirectTo || "/teacher/dashboard";
+        router.push(redirectTo);
       }, 600);
     } catch {
       setErrorMessage("حدث خطأ في الاتصال بالخادم. يرجى التأكد من الاتصال بالمواصفات والمحاولة مجدداً.");
