@@ -24,14 +24,12 @@ export function useCourseData({ teacher, homePageData }: UseCourseDataOptions) {
   const [coursesLoaded, setCoursesLoaded] = useState(false);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
 
-  const teacherId = teacher?.id;
 
   const fetchCourses = useCallback(async () => {
-    if (!teacherId) return;
     setIsLoadingCourses(true);
     try {
       const res = await fetch(
-        `/api/teacher/courses?gradeLevelIds=all&teacherId=${teacherId}`
+        `/api/teacher/courses?gradeLevelIds=all`
       );
       const json = await res.json();
       if (json.success && Array.isArray(json.courses)) {
@@ -43,17 +41,16 @@ export function useCourseData({ teacher, homePageData }: UseCourseDataOptions) {
       setIsLoadingCourses(false);
       setCoursesLoaded(true);
     }
-  }, [teacherId]);
+  }, []);
 
   useEffect(() => {
-    if (!teacherId) return;
     let isMounted = true;
 
     async function load() {
       setIsLoadingCourses(true);
       try {
         const res = await fetch(
-          `/api/teacher/courses?gradeLevelIds=all&teacherId=${teacherId}`
+          `/api/teacher/courses?gradeLevelIds=all`
         );
         const json = await res.json();
         if (isMounted && json.success && Array.isArray(json.courses)) {
@@ -74,7 +71,7 @@ export function useCourseData({ teacher, homePageData }: UseCourseDataOptions) {
     return () => {
       isMounted = false;
     };
-  }, [teacherId]);
+  }, []);
 
   // Flatten all real lessons with course & module context
   const allLessons = useMemo(() => {

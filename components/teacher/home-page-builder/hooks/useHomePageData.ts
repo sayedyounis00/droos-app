@@ -33,8 +33,7 @@ export function useHomePageData({ teacher }: UseHomePageDataOptions = {}) {
     },
   };
 
-  const teacherId = teacher?.id;
-  const storageKey = teacherId ? `droos_homepage_${teacherId}` : null;
+  const storageKey = teacher?.id ? `droos_homepage_${teacher.id}` : null;
 
   // Restore saved data from localStorage
   const [data, setData] = useState<HomePageData>(() => {
@@ -75,12 +74,11 @@ export function useHomePageData({ teacher }: UseHomePageDataOptions = {}) {
 
   // Restore saved settings from Database
   useEffect(() => {
-    if (!teacherId) return;
     let isMounted = true;
 
     const loadSavedSettings = async () => {
       try {
-        const res = await fetch(`/api/teacher/homepage?teacherId=${teacherId}`);
+        const res = await fetch(`/api/teacher/homepage`);
         const json = await res.json();
         if (isMounted && json.success && json.platform) {
           if (json.themeId) {
@@ -109,7 +107,7 @@ export function useHomePageData({ teacher }: UseHomePageDataOptions = {}) {
     return () => {
       isMounted = false;
     };
-  }, [teacherId]);
+  }, []);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
@@ -124,24 +122,19 @@ export function useHomePageData({ teacher }: UseHomePageDataOptions = {}) {
       }
 
       // 2. Save to database via dedicated API
-      if (teacherId) {
-        const res = await fetch("/api/teacher/homepage", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            teacherId,
-            themeId: selectedThemeId,
-            homePageData: data,
-          }),
-        });
-        const json = await res.json();
-        if (json.success) {
-          setSaveMessage("تم حفظ الصفحة وإعدادات المنصة في قاعدة البيانات بنجاح");
-        } else {
-          setSaveMessage("تم الحفظ محلياً (حدث خطأ في مزامنة قاعدة البيانات)");
-        }
+      const res = await fetch("/api/teacher/homepage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          themeId: selectedThemeId,
+          homePageData: data,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setSaveMessage("تم حفظ الصفحة وإعدادات المنصة في قاعدة البيانات بنجاح");
       } else {
-        setSaveMessage("تم حفظ التعديلات محلياً بنجاح");
+        setSaveMessage("تم الحفظ محلياً (حدث خطأ في مزامنة قاعدة البيانات)");
       }
     } catch (err) {
       console.error("Failed to save homepage:", err);
@@ -154,7 +147,7 @@ export function useHomePageData({ teacher }: UseHomePageDataOptions = {}) {
         setSaveMessage(null);
       }, 4000);
     }
-  }, [data, selectedThemeId, storageKey, teacherId]);
+  }, [data, selectedThemeId, storageKey]);
 
   const handleUpdateHero = useCallback((updated: Partial<HeroSection>) => {
     setData((prev) => ({ ...prev, hero: { ...prev.hero, ...updated } }));

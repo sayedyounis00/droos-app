@@ -2,20 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CourseItem, EGYPTIAN_GRADE_LEVELS } from '@/lib/droos-data';
 import { useToast } from './useToast';
 
-export function useDroosData(initialTeacherId?: string) {
-  const [teacherId, setTeacherId] = useState<string>(() => {
-    if (initialTeacherId) return initialTeacherId;
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('droos_teacher');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          return parsed.id || '';
-        } catch {}
-      }
-    }
-    return '';
-  });
+export function useDroosData() {
 
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [selectedGradeIds, setSelectedGradeIds] = useState<string[]>(() => {
@@ -113,7 +100,6 @@ export function useDroosData(initialTeacherId?: string) {
           title,
           description,
           grade_level_id: gradeId,
-          teacher_id: teacherId,
         }),
       });
 

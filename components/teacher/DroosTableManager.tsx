@@ -11,12 +11,10 @@ import { Toast } from "@/components/ui/Toast";
 import { Spinner } from "@/components/ui/Spinner";
 
 interface DroosTableManagerProps {
-  initialTeacherId?: string;
   teacherGrades?: string[];
 }
 
 export default function DroosTableManager({
-  initialTeacherId,
   teacherGrades,
 }: DroosTableManagerProps) {
   const {
@@ -40,7 +38,7 @@ export default function DroosTableManager({
     deleteLesson,
     toast,
     toastMessage,
-  } = useDroosData(initialTeacherId);
+  } = useDroosData();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<CourseItem | null>(null);
