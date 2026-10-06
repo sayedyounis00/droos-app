@@ -17,10 +17,26 @@ export interface TeacherUser {
   createdAt: string;
 }
 
-const SESSION_SECRET =
-  process.env.SESSION_SECRET ||
-  process.env.SUPABASE_ANON_KEY ||
-  'droos-platform-secure-teacher-session-secret-key';
+function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (secret) return secret;
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'SESSION_SECRET environment variable is required in production. ' +
+      'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64url\'))"'
+    );
+  }
+
+  // Development-only fallback — logs a warning so it's never silently used
+  console.warn(
+    '⚠️ SESSION_SECRET is not set — using insecure development fallback. ' +
+    'Set SESSION_SECRET in .env.local before deploying.'
+  );
+  return 'droos-dev-only-insecure-fallback-key';
+}
+
+const SESSION_SECRET = getSessionSecret();
 
 /**
  * Maps a raw database teacher row to the TeacherUser interface.
