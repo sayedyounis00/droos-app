@@ -1,17 +1,15 @@
 import { NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { getAuthenticatedTeacher } from '@/lib/auth/teacher-auth';
+import { requireAuth } from '@/lib/auth/require-auth';
 import { apiSuccess, apiError } from '@/lib/api/responses';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const authTeacher = await getAuthenticatedTeacher(request);
-    const teacherId = searchParams.get('teacherId') || authTeacher?.id;
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+    const teacher = authResult.teacher;
 
-    if (!teacherId) {
-      return apiError('معرف المعلم مطلوب', 400);
-    }
+    const teacherId = teacher.id;
 
     const { data, error } = await supabase
       .from('platforms')
@@ -43,20 +41,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authTeacher = await getAuthenticatedTeacher(request);
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+    const teacher = authResult.teacher;
+
     const body = await request.json();
     const {
-      teacherId,
       themeId,
       homePageData,
       status = 'published',
     } = body ?? {};
 
-    const effectiveTeacherId = authTeacher?.id || teacherId;
-
-    if (!effectiveTeacherId) {
-      return apiError('معرف المعلم مطلوب', 400);
-    }
+    const effectiveTeacherId = teacher.id;
 
     // Fetch teacher row to get verified name and subdomain
     const { data: teacherRow, error: teacherError } = await supabase
@@ -105,8 +101,9 @@ export async function POST(request: NextRequest) {
       message: 'تم حفظ الصفحة وإعدادات المنصة بنجاح',
       platform: savedPlatform,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in POST /api/teacher/homepage:', error);
-    return apiError(error?.message || 'حدث خطأ في الخادم أثناء حفظ إعدادات الصفحة', 500);
+    const message = error instanceof Error ? error.message : 'حدث خطأ في الخادم أثناء حفظ إعدادات الصفحة';
+    return apiError(message, 500);
   }
 }

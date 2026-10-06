@@ -2,9 +2,13 @@ import { NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { LessonItem } from '@/lib/droos-data';
 import { apiSuccess, apiError } from '@/lib/api/responses';
+import { requireAuth } from '@/lib/auth/require-auth';
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+
     const body = await request.json();
     const { module_id, title, content_type, video_url, description } = body ?? {};
 
@@ -52,6 +56,9 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+
     const body = await request.json();
     const { id, title, video_url, description } = body ?? {};
 
@@ -97,6 +104,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+
     const { searchParams } = new URL(request.url);
     const lessonId = searchParams.get('lessonId');
 

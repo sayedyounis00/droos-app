@@ -3,9 +3,13 @@ import { supabase } from '@/lib/supabase';
 import { ModuleItem } from '@/lib/droos-data';
 import { apiSuccess, apiError } from '@/lib/api/responses';
 import { MODULE_WITH_LESSONS_SELECT } from '@/lib/queries/droos-queries';
+import { requireAuth } from '@/lib/auth/require-auth';
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+
     const body = await request.json();
     const { course_id, title } = body ?? {};
 
@@ -45,6 +49,9 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+
     const { searchParams } = new URL(request.url);
     const moduleId = searchParams.get('moduleId');
 
@@ -68,6 +75,9 @@ export async function DELETE(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+
     const body = await request.json();
     const { id, title } = body ?? {};
 

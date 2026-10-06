@@ -5,16 +5,18 @@ import {
   mapDbRowToTeacherUser,
   hashPassword,
   createSessionToken,
-  getAuthenticatedTeacher,
 } from '@/lib/auth/teacher-auth';
+import { requireAuth } from '@/lib/auth/require-auth';
 import { apiSuccess, apiError } from '@/lib/api/responses';
 
 export async function POST(request: NextRequest) {
   try {
-    const authTeacher = await getAuthenticatedTeacher(request);
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+    const authTeacher = authResult.teacher;
+
     const body = await request.json();
     const {
-      id,
       name,
       phone,
       password,
@@ -27,16 +29,7 @@ export async function POST(request: NextRequest) {
       subdomainLocked,
     } = body ?? {};
 
-    // Validate that the caller has a valid teacher ID
-    const targetTeacherId = authTeacher?.id || id;
-    if (!targetTeacherId) {
-      return apiError('غير مصرح لك بتعديل بيانات هذا الحساب.', 401);
-    }
-
-    // Authorization check: if authenticated, must match the ID being modified
-    if (authTeacher && id && authTeacher.id !== id) {
-      return apiError('غير مصرح لك بتعديل بيانات حساب آخر.', 403);
-    }
+    const targetTeacherId = authTeacher.id;
 
     if (!name || !phone || !subject) {
       return apiError('الاسم ورقم الهاتف والمادة الدراسية حقول مطلوبة.', 400);

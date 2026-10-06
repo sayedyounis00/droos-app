@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { CourseItem, EGYPTIAN_GRADE_LEVELS, getGradeLevelUuid, isValidUuid } from '@/lib/droos-data';
 import { apiSuccess, apiError } from '@/lib/api/responses';
 import { COURSE_SELECT_QUERY } from '@/lib/queries/droos-queries';
-import { getAuthenticatedTeacher } from '@/lib/auth/teacher-auth';
+import { requireAuth } from '@/lib/auth/require-auth';
 
 /**
  * Resolves any grade ID (e.g. 'grd-prep-3', 'الصف الثالث الإعدادي', or real UUID) to the database UUID.
@@ -26,9 +26,12 @@ async function resolveGradeId(gradeId: string): Promise<string> {
 
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+    const teacher = authResult.teacher;
+
     const { searchParams } = new URL(request.url);
     const rawGradeLevelIds = searchParams.get('gradeLevelIds') ?? searchParams.get('gradeLevelId');
-    const teacherId = searchParams.get('teacherId');
 
     let query = supabase
       .from('courses')
@@ -51,9 +54,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (teacherId) {
-      query = query.eq('teacher_id', teacherId);
-    }
+    query = query.eq('teacher_id', teacher.id);
 
     const { data, error } = await query;
 
@@ -71,13 +72,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authTeacher = await getAuthenticatedTeacher(request);
-    const body = await request.json();
-    const { title, description, grade_level_id, teacher_id } = body ?? {};
-    const effectiveTeacherId = authTeacher?.id ?? teacher_id;
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+    const teacher = authResult.teacher;
 
-    if (!title || !grade_level_id || !effectiveTeacherId) {
-      return apiError('عنوان الدورة والصف الدراسي ومعرف المعلم مطلوبة', 400);
+    const body = await request.json();
+    const { title, description, grade_level_id } = body ?? {};
+
+    if (!title || !grade_level_id) {
+      return apiError('عنوان الدورة والصف الدراسي مطلوبة', 400);
     }
 
     const validGradeLevelId = await resolveGradeId(grade_level_id);
@@ -91,7 +94,7 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         description: (description ?? '').trim(),
         grade_level_id: validGradeLevelId,
-        teacher_id: effectiveTeacherId,
+        teacher_id: teacher.id,
       })
       .select(COURSE_SELECT_QUERY)
       .single();
@@ -123,6 +126,9 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+
     const body = await request.json();
     const { id, title, description, grade_level_id } = body ?? {};
 
@@ -164,6 +170,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+
     const { searchParams } = new URL(request.url);
     const courseId = searchParams.get('courseId');
 
