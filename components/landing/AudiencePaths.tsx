@@ -23,9 +23,8 @@ export default function AudiencePaths() {
           <div className="relative flex flex-col justify-between rounded-3xl border-2 border-[#1F7A7B] bg-gradient-to-b from-[#EAF4F4]/40 to-white p-8 md:p-10 shadow-lg">
             <div>
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1F7A7B] px-4 py-1 text-xs font-bold text-white">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-                  استقلالية كاملة
+                <span className="rounded-full bg-[#1F7A7B] px-4 py-1 text-xs font-bold text-white">
+                  استقلالية كاملة 🎓
                 </span>
                 <span className="text-xs font-bold text-[#1F7A7B]">تحكم مطلق</span>
               </div>
@@ -39,21 +38,15 @@ export default function AudiencePaths() {
 
               <ul className="mt-6 space-y-3">
                 <li className="flex items-center gap-3 text-sm text-[#1C2126]">
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#2E9E5B] text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  </span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#2E9E5B] text-xs text-white">✓</span>
                   <span>دون تكاليف تأسيس أو عمولات خفية.</span>
                 </li>
                 <li className="flex items-center gap-3 text-sm text-[#1C2126]">
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#2E9E5B] text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  </span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#2E9E5B] text-xs text-white">✓</span>
                   <span>إمكانية تعديل البيانات الشخصية والتخصصات في أي وقت.</span>
                 </li>
                 <li className="flex items-center gap-3 text-sm text-[#1C2126]">
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#2E9E5B] text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  </span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#2E9E5B] text-xs text-white">✓</span>
                   <span>لوحة تحكم سهلة وسريعة لمتابعة كافة طلابك.</span>
                 </li>
               </ul>
@@ -78,9 +71,8 @@ export default function AudiencePaths() {
           <div className="relative flex flex-col justify-between rounded-3xl border-2 border-[#1F7A7B]/40 bg-gradient-to-b from-[#1F7A7B]/5 to-white p-8 md:p-10 shadow-lg">
             <div>
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0F4E4F] px-4 py-1 text-xs font-bold text-white">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fillOpacity="0.3"/></svg>
-                  سهولة التأسيس
+                <span className="rounded-full bg-[#0F4E4F] px-4 py-1 text-xs font-bold text-white">
+                  سهولة التأسيس 🚀
                 </span>
                 <span className="text-xs font-bold text-[#1F7A7B]">دعم مباشر</span>
               </div>
@@ -94,21 +86,15 @@ export default function AudiencePaths() {
 
               <ul className="mt-6 space-y-3">
                 <li className="flex items-center gap-3 text-sm text-[#1C2126]">
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#1F7A7B] text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  </span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1F7A7B] text-xs text-white">✓</span>
                   <span>تواصل مباشر عبر واتساب لإنهاء إجراءات التفعيل.</span>
                 </li>
                 <li className="flex items-center gap-3 text-sm text-[#1C2126]">
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#1F7A7B] text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  </span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1F7A7B] text-xs text-white">✓</span>
                   <span>مساعدة متواصلة في رفع وتنظيم دروسك الأولى.</span>
                 </li>
                 <li className="flex items-center gap-3 text-sm text-[#1C2126]">
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#1F7A7B] text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  </span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1F7A7B] text-xs text-white">✓</span>
                   <span>واجهة خفيفة وسريعة تعمل بكفاءة على كافة الهواتف.</span>
                 </li>
               </ul>
