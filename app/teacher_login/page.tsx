@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Logo } from "@/components/ui/Logo";
+import { FormInput } from "@/components/ui/FormInput";
+import { PasswordInput } from "@/components/ui/PasswordInput";
+import { Spinner } from "@/components/ui/Spinner";
 
 export default function TeacherLoginPage() {
+  const router = useRouter();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -35,7 +40,7 @@ export default function TeacherLoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ phone, password }),
+        body: JSON.stringify({ phone, password, rememberMe }),
       });
 
       const data = await res.json();
@@ -48,12 +53,13 @@ export default function TeacherLoginPage() {
       setSuccessMessage("تم تسجيل الدخول بنجاح! جاري التوجيه إلى لوحة التحكم...");
       
       // Store session in localStorage for fast UI hydration
-      if (typeof window !== "undefined" && data.teacher) {
+      if (data.teacher) {
         localStorage.setItem("droos_teacher", JSON.stringify(data.teacher));
       }
 
+      const redirectTo = data.redirectTo || "/teacher/dashboard";
       setTimeout(() => {
-        window.location.href = data.redirectTo || "/teacher/dashboard";
+        router.push(redirectTo);
       }, 600);
     } catch {
       setErrorMessage("حدث خطأ في الاتصال بالخادم. يرجى التأكد من الاتصال بالمواصفات والمحاولة مجدداً.");
@@ -72,20 +78,7 @@ export default function TeacherLoginPage() {
       {/* Top Bar Header */}
       <header className="w-full border-b border-[#EEF0F2] bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 transition-transform hover:scale-[1.02]">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1F7A7B] text-white shadow-sm shadow-[#1F7A7B]/20">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-bold tracking-tight text-[#1C2126]">دُرُوس</span>
-              <span className="text-[10px] font-medium text-[#1F7A7B]">منصة المعلمين في مصر</span>
-            </div>
-          </Link>
-
+          <Logo href="/" subtitle="منصة المعلمين في مصر" />
         </div>
       </header>
 
@@ -134,59 +127,29 @@ export default function TeacherLoginPage() {
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
               
-              {/* Phone Field (Without flag, Egyptian format) */}
-              <div>
-                <label htmlFor="phone" className="block text-xs font-bold text-[#1C2126] mb-2">
-                  رقم الهاتف
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="01xxxxxxxxx"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                  className="w-full rounded-2xl border border-[#D3D7DC] bg-[#F7F8F9] py-3.5 px-4 text-sm font-medium text-[#1C2126] outline-none transition-all focus:border-[#1F7A7B] focus:bg-white focus:ring-2 focus:ring-[#1F7A7B]/20"
-                />
-              </div>
+              {/* Phone Field */}
+              <FormInput
+                id="phone"
+                name="phone"
+                type="tel"
+                inputMode="numeric"
+                label="رقم الهاتف"
+                placeholder="01xxxxxxxxx"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
 
               {/* Password Field */}
-              <div>
-                <label htmlFor="password" className="block text-xs font-bold text-[#1C2126] mb-2">
-                  كلمة المرور
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="أدخل كلمة المرور"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="w-full rounded-2xl border border-[#D3D7DC] bg-[#F7F8F9] py-3.5 pr-4 pl-12 text-sm font-medium text-[#1C2126] outline-none transition-all focus:border-[#1F7A7B] focus:bg-white focus:ring-2 focus:ring-[#1F7A7B]/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#8A929B] hover:text-[#1F7A7B]"
-                    aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-                  >
-                    {showPassword ? (
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a8.97 8.97 0 013.682-.787c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21M3 3l18 18" />
-                      </svg>
-                    ) : (
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
+              <PasswordInput
+                id="password"
+                name="password"
+                label="كلمة المرور"
+                placeholder="أدخل كلمة المرور"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
 
               {/* Extra Row: Remember Me & Forgot Password */}
               <div className="flex items-center justify-between text-xs">
@@ -218,10 +181,7 @@ export default function TeacherLoginPage() {
               >
                 {isLoading ? (
                   <>
-                    <svg className="h-5 w-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
+                    <Spinner size="md" className="text-white" />
                     <span>جاري تسجيل الدخول...</span>
                   </>
                 ) : (

@@ -1,17 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { LessonItem } from '@/lib/droos-data';
+import { apiSuccess, apiError } from '@/lib/api/responses';
+import { requireAuth } from '@/lib/auth/require-auth';
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+
     const body = await request.json();
-    const { module_id, title, content_type, video_url, description } = body || {};
+    const { module_id, title, content_type, video_url, description } = body ?? {};
 
     if (!module_id || !title) {
-      return NextResponse.json(
-        { success: false, error: 'اسم الحصة ومعرف الدرس مطلوبان' },
-        { status: 400 }
-      );
+      return apiError('اسم الحصة ومعرف الدرس مطلوبان', 400);
     }
 
     const { data, error } = await supabase
@@ -29,10 +31,7 @@ export async function POST(request: NextRequest) {
 
     if (error || !data) {
       console.error('Supabase DB lesson insert error:', error);
-      return NextResponse.json(
-        { success: false, error: error?.message || 'فشل إضافة الحصة في قاعدة البيانات' },
-        { status: 500 }
-      );
+      return apiError(error?.message ?? 'فشل إضافة الحصة في قاعدة البيانات', 500);
     }
 
     const newLesson: LessonItem = {
@@ -45,23 +44,26 @@ export async function POST(request: NextRequest) {
       created_at: data.created_at,
     };
 
-    return NextResponse.json({ success: true, lesson: newLesson, message: 'تمت إضافة الحصة بنجاح في قاعدة البيانات' });
+    return apiSuccess({
+      lesson: newLesson,
+      message: 'تمت إضافة الحصة بنجاح في قاعدة البيانات',
+    });
   } catch (error) {
     console.error('Error creating lesson:', error);
-    return NextResponse.json({ success: false, error: 'حدث خطأ أثناء إضافة الحصة' }, { status: 500 });
+    return apiError('حدث خطأ أثناء إضافة الحصة', 500);
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+
     const body = await request.json();
-    const { id, title, video_url, description } = body || {};
+    const { id, title, video_url, description } = body ?? {};
 
     if (!id || !title) {
-      return NextResponse.json(
-        { success: false, error: 'معرف الحصة واسم الحصة مطلوبان' },
-        { status: 400 }
-      );
+      return apiError('معرف الحصة واسم الحصة مطلوبان', 400);
     }
 
     const { data, error } = await supabase
@@ -77,10 +79,7 @@ export async function PUT(request: NextRequest) {
 
     if (error || !data) {
       console.error('Supabase DB lesson update error:', error);
-      return NextResponse.json(
-        { success: false, error: error?.message || 'فشل تحديث الحصة في قاعدة البيانات' },
-        { status: 500 }
-      );
+      return apiError(error?.message ?? 'فشل تحديث الحصة في قاعدة البيانات', 500);
     }
 
     const updatedLesson: LessonItem = {
@@ -93,37 +92,39 @@ export async function PUT(request: NextRequest) {
       created_at: data.created_at,
     };
 
-    return NextResponse.json({ success: true, lesson: updatedLesson, message: 'تم تحديث الحصة بنجاح' });
+    return apiSuccess({
+      lesson: updatedLesson,
+      message: 'تم تحديث الحصة بنجاح',
+    });
   } catch (error) {
     console.error('Error updating lesson:', error);
-    return NextResponse.json({ success: false, error: 'حدث خطأ أثناء تعديل الحصة' }, { status: 500 });
+    return apiError('حدث خطأ أثناء تعديل الحصة', 500);
   }
 }
 
-
 export async function DELETE(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if ('response' in authResult) return authResult.response;
+
     const { searchParams } = new URL(request.url);
     const lessonId = searchParams.get('lessonId');
 
     if (!lessonId) {
-      return NextResponse.json({ success: false, error: 'معرف الحصة مطلوب' }, { status: 400 });
+      return apiError('معرف الحصة مطلوب', 400);
     }
 
     const { error } = await supabase.from('lessons').delete().eq('id', lessonId);
 
     if (error) {
       console.error('Supabase DB lesson delete error:', error);
-      return NextResponse.json(
-        { success: false, error: error.message || 'فشل حذف الحصة من قاعدة البيانات' },
-        { status: 500 }
-      );
+      return apiError(error.message ?? 'فشل حذف الحصة من قاعدة البيانات', 500);
     }
 
-    return NextResponse.json({ success: true, message: 'تم حذف الحصة بنجاح من قاعدة البيانات' });
+    return apiSuccess({ message: 'تم حذف الحصة بنجاح من قاعدة البيانات' });
   } catch (error) {
     console.error('Error deleting lesson:', error);
-    return NextResponse.json({ success: false, error: 'حدث خطأ أثناء حذف الحصة' }, { status: 500 });
+    return apiError('حدث خطأ أثناء حذف الحصة', 500);
   }
 }
 

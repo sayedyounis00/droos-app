@@ -2,11 +2,16 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: '.env.local' });
 
-const projectRef = 'rzmkutmawuajgnditcaq';
+const projectRef = process.env.SUPABASE_PROJECT_REF;
 const token = process.env.SUPABASE_ACCESS_TOKEN;
 
+if (!projectRef) {
+  console.error('Missing SUPABASE_PROJECT_REF — set it in .env.local');
+  process.exit(1);
+}
+
 if (!token) {
-  console.error('Missing SUPABASE_ACCESS_TOKEN');
+  console.error('Missing SUPABASE_ACCESS_TOKEN — set it in .env.local');
   process.exit(1);
 }
 

@@ -8,8 +8,9 @@ export default function FinalCTABanner() {
 
       <div className="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
         
-        <span className="inline-block rounded-full bg-white/10 px-4 py-1 text-xs font-bold text-[#FDF3E3] backdrop-blur-xs mb-4">
-          ابدأ اليوم دون تأخير 🚀
+        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs font-bold text-[#FDF3E3] backdrop-blur-xs mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fillOpacity="0.4"/></svg>
+          ابدأ اليوم دون تأخير
         </span>
 
         <h2 className="text-3xl font-black tracking-tight sm:text-4xl md:text-5xl">

@@ -1,6 +1,7 @@
 "use client";
 
 import { EGYPTIAN_STAGES, EGYPTIAN_GRADE_LEVELS } from "@/lib/droos-data";
+import { Icon } from "@/components/ui/Icon";
 
 interface GradeLevelFilterChipsProps {
   selectedGradeIds: string[]; // empty array means 'all'
@@ -48,7 +49,10 @@ export default function GradeLevelFilterChips({
               : "bg-white text-[#4A5158] border-[#EEF0F2] hover:border-[#1F7A7B]/40 hover:bg-[#F7F8F9]"
           }`}
         >
-          <span>✨ الكل</span>
+          <span className="flex items-center gap-1.5">
+            <Icon name="layers" size={14} strokeWidth={1.8} />
+            <span>الكل</span>
+          </span>
         </button>
 
         {/* Grouped by Stage */}
