@@ -56,11 +56,15 @@ export function useKeyboardShortcuts({
           break;
 
         case "ArrowRight":
+        case "l":
+        case "L":
           e.preventDefault();
           seekRelative(10);
           break;
 
         case "ArrowLeft":
+        case "j":
+        case "J":
           e.preventDefault();
           seekRelative(-10);
           break;
