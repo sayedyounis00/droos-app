@@ -19,7 +19,10 @@ export function Watermark({
   opacity = 0.12,
   intervalMs = 25000,
 }: WatermarkProps) {
-  const [position, setPosition] = useState({ x: 15, y: 20 });
+  const [position, setPosition] = useState(() => ({
+    x: 10 + Math.random() * 75,
+    y: 10 + Math.random() * 70,
+  }));
   const containerRef = useRef<HTMLDivElement>(null);
 
   const randomizePosition = useCallback(() => {
@@ -30,7 +33,6 @@ export function Watermark({
   }, []);
 
   useEffect(() => {
-    randomizePosition();
     const interval = setInterval(randomizePosition, intervalMs);
     return () => clearInterval(interval);
   }, [intervalMs, randomizePosition]);

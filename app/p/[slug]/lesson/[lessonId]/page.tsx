@@ -46,8 +46,17 @@ export default async function LessonPageRoute({
     PLATFORM_THEMES[platformData.themeId] || PLATFORM_THEMES["horizon"];
 
   // Module and course titles
-  const moduleTitle = (lessonData.lesson as any).modules?.title;
-  const courseTitle = (lessonData.lesson as any).modules?.courses?.title;
+  interface LessonWithRelations {
+    modules?: {
+      title?: string;
+      courses?: {
+        title?: string;
+      };
+    };
+  }
+  const lessonWithRelations = lessonData.lesson as unknown as LessonWithRelations;
+  const moduleTitle = lessonWithRelations.modules?.title;
+  const courseTitle = lessonWithRelations.modules?.courses?.title;
 
   return (
     <PlayerLayout

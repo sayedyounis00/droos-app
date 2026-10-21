@@ -83,7 +83,9 @@ export function useYouTubePlayer({
   const [isReady, setIsReady] = useState(false);
   const timeUpdateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const callbacksRef = useRef(callbacks);
-  callbacksRef.current = callbacks;
+  useEffect(() => {
+    callbacksRef.current = callbacks;
+  }, [callbacks]);
 
   // Time update polling (YouTube API doesn't have a native timeupdate event)
   const startTimeUpdates = useCallback(() => {
@@ -143,6 +145,10 @@ export function useYouTubePlayer({
       } catch {
         // ignore
       }
+
+      // Ensure container element is mounted in DOM
+      const containerElem = document.getElementById(containerId);
+      if (!containerElem) return;
 
       const player = new window.YT.Player(containerId, {
         videoId: currentVideoId,

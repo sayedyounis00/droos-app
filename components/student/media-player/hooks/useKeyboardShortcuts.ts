@@ -30,7 +30,9 @@ export function useKeyboardShortcuts({
   enabled = true,
 }: UseKeyboardShortcutsOptions) {
   const getVolumeRef = useRef(getVolume);
-  getVolumeRef.current = getVolume;
+  useEffect(() => {
+    getVolumeRef.current = getVolume;
+  }, [getVolume]);
 
   const handler = useCallback(
     (e: KeyboardEvent) => {

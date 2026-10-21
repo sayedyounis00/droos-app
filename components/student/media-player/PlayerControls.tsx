@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ProgressBar } from "./ProgressBar";
 import { PLAYBACK_RATES, QUALITY_LABELS } from "./types";
-import type { PlayerState, PlaybackRate } from "./types";
+import type { PlayerState } from "./types";
 
 /* ─── SVG Icon Helpers ─── */
 function PlayIcon({ size = 20 }: { size?: number }) {
@@ -166,7 +166,9 @@ export function PlayerControls({
   const speedMenuRef = useRef<HTMLDivElement>(null);
   const qualityMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close menus on outside click
+  const dragCleanupRef = useRef<(() => void) | null>(null);
+
+  // Close menus on outside click & cleanup dragging on unmount
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (speedMenuRef.current && !speedMenuRef.current.contains(e.target as Node)) {
@@ -177,7 +179,10 @@ export function PlayerControls({
       }
     };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      dragCleanupRef.current?.();
+    };
   }, []);
 
   // Compute volume percentage from mouse event in RTL track
@@ -206,6 +211,12 @@ export function PlayerControls({
 
       const handleMouseUp = () => {
         setIsDraggingVolume(false);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        dragCleanupRef.current = null;
+      };
+
+      dragCleanupRef.current = () => {
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
       };

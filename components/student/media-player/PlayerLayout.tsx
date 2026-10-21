@@ -46,6 +46,7 @@ export function PlayerLayout({
 
   const [activeTab, setActiveTab] = useState<"overview" | "pdf">("overview");
   const [isTheaterMode, setIsTheaterMode] = useState(false);
+  const [pdfNotice, setPdfNotice] = useState<string | null>(null);
 
   // Find prev/next in playlist
   const currentIndex = playlist.findIndex((l) => l.id === lesson.id);
@@ -342,15 +343,28 @@ export function PlayerLayout({
                       <button
                         type="button"
                         onClick={() =>
-                          alert(
-                            "ملف التمارين متاح للطلاب المشتركين في المجموعة."
+                          setPdfNotice(
+                            "ملف التمارين متاح للطلاب المشتركين في المجموعة الدراسية."
                           )
                         }
-                        className="px-4 py-2 text-xs font-bold rounded-xl border border-[#D3D7DC] bg-white hover:bg-[#F7F8F9] text-[#1C2126] transition-colors shadow-2xs"
+                        className="px-4 py-2 text-xs font-bold rounded-xl border border-[#D3D7DC] bg-white hover:bg-[#F7F8F9] text-[#1C2126] transition-colors shadow-2xs cursor-pointer"
                       >
                         تحميل الملف
                       </button>
                     </div>
+
+                    {pdfNotice && (
+                      <div className="mt-3 p-3 rounded-xl bg-[#1F7A7B]/10 border border-[#1F7A7B]/20 text-[#1F7A7B] text-xs font-bold flex items-center justify-between">
+                        <span>{pdfNotice}</span>
+                        <button
+                          type="button"
+                          onClick={() => setPdfNotice(null)}
+                          className="text-xs hover:opacity-75 cursor-pointer px-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

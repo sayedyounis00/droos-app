@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useCallback, useState } from "react";
+import React, { useRef, useCallback, useState, useEffect } from "react";
 
 interface ProgressBarProps {
   currentTime: number;
@@ -40,6 +40,15 @@ export function ProgressBar({
     []
   );
 
+  const dragCleanupRef = useRef<(() => void) | null>(null);
+
+  // Clean up any lingering listeners if unmounted while dragging
+  useEffect(() => {
+    return () => {
+      dragCleanupRef.current?.();
+    };
+  }, []);
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
@@ -54,6 +63,12 @@ export function ProgressBar({
 
       const handleMouseUp = () => {
         setIsDragging(false);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        dragCleanupRef.current = null;
+      };
+
+      dragCleanupRef.current = () => {
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
       };

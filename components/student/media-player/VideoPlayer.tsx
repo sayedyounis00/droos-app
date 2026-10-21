@@ -55,19 +55,17 @@ export function VideoPlayer({
   // ── Secure video ID fetching ──
   // Never receive the URL from the server component.
   // Instead, fetch only the video ID from a protected API route.
-  const [videoId, setVideoId] = useState<string | null>(null);
-  const [fetchError, setFetchError] = useState(false);
-  const [isFetchingVideo, setIsFetchingVideo] = useState(false);
+  const [loadedVideo, setLoadedVideo] = useState<{ lessonId: string; videoId: string } | null>(null);
+  const [failedLessonId, setFailedLessonId] = useState<string | null>(null);
+
+  const videoId = loadedVideo?.lessonId === lessonId ? loadedVideo.videoId : null;
+  const fetchError = failedLessonId === lessonId;
+  const isFetchingVideo = hasVideo && !videoId && !fetchError;
 
   useEffect(() => {
-    if (!hasVideo || !lessonId) {
-      setVideoId(null);
-      return;
-    }
+    if (!hasVideo || !lessonId) return;
 
     let cancelled = false;
-    setIsFetchingVideo(true);
-    setFetchError(false);
 
     fetch(`/api/lesson/${lessonId}/video-url`)
       .then((res) => {
@@ -76,20 +74,21 @@ export function VideoPlayer({
       })
       .then((data) => {
         if (!cancelled && data.videoId) {
-          setVideoId(data.videoId);
+          setLoadedVideo({ lessonId, videoId: data.videoId });
         }
       })
       .catch(() => {
-        if (!cancelled) setFetchError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setIsFetchingVideo(false);
+        if (!cancelled) {
+          setFailedLessonId(lessonId);
+        }
       });
 
     return () => {
       cancelled = true;
     };
   }, [lessonId, hasVideo]);
+
+  const activeVideoId = hasVideo ? videoId : null;
 
   // YouTube Player Hook
   const callbacks: PlayerCallbacks = {
@@ -98,12 +97,15 @@ export function VideoPlayer({
     },
     onStateChange: (state) => {
       if (state === 0) onEnded?.(); // ENDED
-      if (state === 1) setShowBigPlay(false); // PLAYING
+      if (state === 1) {
+        setShowBigPlay(false); // PLAYING
+        resetHideTimer();
+      }
     },
   };
 
   const { state, isReady, controls } = useYouTubePlayer({
-    videoId,
+    videoId: activeVideoId,
     containerId: CONTAINER_ID,
     callbacks,
     startTime,
@@ -140,15 +142,8 @@ export function VideoPlayer({
     }
   }, [state.isPlaying]);
 
-  // Show controls when paused
-  useEffect(() => {
-    if (!state.isPlaying) {
-      setControlsVisible(true);
-      if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
-    } else {
-      resetHideTimer();
-    }
-  }, [state.isPlaying, resetHideTimer]);
+  // Controls are always visible when video is paused; auto-hides only during active playback
+  const isControlsVisible = !state.isPlaying || controlsVisible;
 
   // Fullscreen handling
   const toggleFullscreen = useCallback(() => {
@@ -156,9 +151,9 @@ export function VideoPlayer({
     if (!container) return;
 
     if (!document.fullscreenElement) {
-      container.requestFullscreen?.().then(() => setIsFullscreen(true));
+      container.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
     } else {
-      document.exitFullscreen?.().then(() => setIsFullscreen(false));
+      document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => {});
     }
   }, []);
 
@@ -258,6 +253,7 @@ export function VideoPlayer({
   return (
     <div
       ref={containerRef}
+      aria-label={`مشغل الفيديو: ${lessonTitle}`}
       className="relative aspect-video w-full rounded-2xl overflow-hidden shadow-2xl bg-black border border-black/20 group"
       data-player-area
       onMouseMove={resetHideTimer}
@@ -265,7 +261,7 @@ export function VideoPlayer({
         if (state.isPlaying) setControlsVisible(false);
       }}
       style={{
-        cursor: controlsVisible ? "default" : "none",
+        cursor: isControlsVisible ? "default" : "none",
         userSelect: "none",
         WebkitUserSelect: "none",
       }}
@@ -282,7 +278,7 @@ export function VideoPlayer({
         className="absolute inset-0 z-10"
         onClick={handleVideoAreaClick}
         onDoubleClick={handleDoubleClick}
-        style={{ cursor: controlsVisible ? "pointer" : "none" }}
+        style={{ cursor: isControlsVisible ? "pointer" : "none" }}
       />
 
       {/* Blur overlay — activates when tab is not focused */}
@@ -394,7 +390,7 @@ export function VideoPlayer({
         onSetQuality={controls.setQuality}
         onToggleFullscreen={toggleFullscreen}
         onToggleTheaterMode={onToggleTheaterMode || (() => {})}
-        isVisible={controlsVisible}
+        isVisible={isControlsVisible}
         accentColor={accentColor}
       />
 

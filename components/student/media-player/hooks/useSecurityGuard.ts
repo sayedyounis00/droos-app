@@ -31,9 +31,13 @@ export function useSecurityGuard({
 }: UseSecurityGuardOptions) {
   const isDevToolsOpenRef = useRef(false);
 
-  // 1. Disable right-click context menu on the entire page
+  // 1. Disable right-click context menu on the entire page (except text inputs)
   const preventContextMenu = useCallback((e: MouseEvent) => {
     if (!enabled) return;
+    const target = e.target as HTMLElement | null;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
   }, [enabled]);
