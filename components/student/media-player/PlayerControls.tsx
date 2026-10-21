@@ -351,21 +351,19 @@ export function PlayerControls({
               </div>
             )}
 
-            {/* PiP */}
-            {typeof document !== "undefined" && document.pictureInPictureEnabled && (
-              <button
-                type="button"
-                onClick={() => {
-                  // PiP only works with <video> elements, not iframes
-                  // For YouTube iframe, this will be limited
-                }}
-                className={`${controlBtnClass} hidden sm:flex`}
-                aria-label="صورة داخل صورة"
-                title="صورة داخل صورة"
-              >
-                <PipIcon size={18} />
-              </button>
-            )}
+            {/* PiP — always rendered; no-op for YouTube iframes */}
+            <button
+              type="button"
+              onClick={() => {
+                // PiP only works with <video> elements, not iframes
+                // For YouTube iframe, this will be limited
+              }}
+              className={`${controlBtnClass} hidden sm:flex`}
+              aria-label="صورة داخل صورة"
+              title="صورة داخل صورة"
+            >
+              <PipIcon size={18} />
+            </button>
 
             {/* Theater Mode */}
             <button
