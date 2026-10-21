@@ -4,7 +4,7 @@ import {
   getPublicLesson,
 } from "@/lib/queries/public-platform";
 import { PLATFORM_THEMES } from "@/lib/themes";
-import { StudentLessonPlayer } from "@/components/student/StudentLessonPlayer";
+import { PlayerLayout } from "@/components/student/media-player/PlayerLayout";
 
 interface LessonPageRouteProps {
   params: Promise<{ slug: string; lessonId: string }>;
@@ -50,7 +50,7 @@ export default async function LessonPageRoute({
   const courseTitle = (lessonData.lesson as any).modules?.courses?.title;
 
   return (
-    <StudentLessonPlayer
+    <PlayerLayout
       lesson={{
         id: lessonData.lesson.id,
         title: lessonData.lesson.title,
