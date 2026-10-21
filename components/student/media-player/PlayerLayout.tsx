@@ -297,15 +297,6 @@ export function PlayerLayout({
                         </div>
                       </div>
                     )}
-
-                    {/* Keyboard shortcuts hint */}
-                    <div className="hidden sm:block pt-2">
-                      <p className="text-[11px] text-[#8A929B] font-medium">
-                        💡 اختصارات: مسافة = تشغيل/إيقاف • ← → = تقديم/ترجيع
-                        10 ثواني • ↑ ↓ = مستوى الصوت • M = كتم • F = ملء
-                        الشاشة • T = وضع المسرح
-                      </p>
-                    </div>
                   </div>
                 )}
 

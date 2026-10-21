@@ -5,6 +5,8 @@ import { useEffect, useCallback, useRef } from "react";
 interface UseSecurityGuardOptions {
   /** Called when DevTools is detected open */
   onDevToolsDetected?: () => void;
+  /** Called when DevTools is detected closed */
+  onDevToolsClosed?: () => void;
   /** Called when the user switches tabs */
   onTabBlur?: () => void;
   /** Called when the user returns to the tab */
@@ -13,58 +15,69 @@ interface UseSecurityGuardOptions {
 }
 
 /**
- * Security guard hook — implements multiple layers of content protection:
- * 1. Disable right-click context menu
- * 2. Prevent text selection
- * 3. Block common DevTools shortcuts
- * 4. Detect tab visibility changes (blur/focus)
- * 5. Block drag events (prevent dragging video)
- * 6. Detect DevTools via debugger timing
+ * Security guard hook — implements comprehensive layers of content protection:
+ * 1. Disable right-click context menu globally to prevent "Inspect Element"
+ * 2. Prevent drag events and text selection on player
+ * 3. Block all DevTools and view-source shortcuts (Windows, Linux, macOS)
+ * 4. Monitor window size differentials and console hooks to detect DevTools state
+ * 5. Monitor tab visibility changes (blur/focus)
  */
 export function useSecurityGuard({
   onDevToolsDetected,
+  onDevToolsClosed,
   onTabBlur,
   onTabFocus,
   enabled = true,
 }: UseSecurityGuardOptions) {
-  const devToolsCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isDevToolsOpenRef = useRef(false);
 
-  // 1. Disable right-click context menu on the player area
+  // 1. Disable right-click context menu on the entire page
   const preventContextMenu = useCallback((e: MouseEvent) => {
     if (!enabled) return;
-    const target = e.target as HTMLElement;
-    if (target.closest("[data-player-area]")) {
-      e.preventDefault();
-    }
+    e.preventDefault();
+    e.stopPropagation();
   }, [enabled]);
 
-  // 2. Block DevTools shortcuts
+  // 2. Block DevTools keyboard shortcuts across Windows, Linux, and macOS
   const blockDevToolsKeys = useCallback((e: KeyboardEvent) => {
     if (!enabled) return;
 
-    // F12
-    if (e.key === "F12") {
+    const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
+    const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+
+    // F12 key
+    if (e.key === "F12" || e.keyCode === 123) {
       e.preventDefault();
+      e.stopPropagation();
       onDevToolsDetected?.();
       return;
     }
 
-    // Ctrl+Shift+I (Inspector), Ctrl+Shift+J (Console), Ctrl+Shift+C (Element picker)
-    if (e.ctrlKey && e.shiftKey && ["I", "i", "J", "j", "C", "c"].includes(e.key)) {
+    // Ctrl+Shift+I / Cmd+Opt+I (Developer Tools)
+    // Ctrl+Shift+J / Cmd+Opt+J (Console)
+    // Ctrl+Shift+C / Cmd+Opt+C (Inspect Element)
+    // Ctrl+Shift+K (Firefox console)
+    const key = e.key.toLowerCase();
+    const hasModifier = isMac ? (e.metaKey && e.altKey) : (e.ctrlKey && e.shiftKey);
+
+    if (hasModifier && ["i", "j", "c", "k"].includes(key)) {
       e.preventDefault();
+      e.stopPropagation();
       onDevToolsDetected?.();
       return;
     }
 
-    // Ctrl+U (View Source)
-    if (e.ctrlKey && (e.key === "u" || e.key === "U")) {
+    // Ctrl+U / Cmd+Opt+U (View Source)
+    if ((cmdOrCtrl && key === "u") || (isMac && e.metaKey && e.altKey && key === "u")) {
       e.preventDefault();
+      e.stopPropagation();
       return;
     }
 
-    // Ctrl+S (Save page)
-    if (e.ctrlKey && (e.key === "s" || e.key === "S")) {
+    // Ctrl+S / Cmd+S (Save page)
+    if (cmdOrCtrl && key === "s") {
       e.preventDefault();
+      e.stopPropagation();
       return;
     }
   }, [enabled, onDevToolsDetected]);
@@ -88,41 +101,50 @@ export function useSecurityGuard({
     }
   }, [enabled, onTabBlur, onTabFocus]);
 
-  // 5. DevTools detection via timing
+  // 5. DevTools detection via viewport threshold and timing
   useEffect(() => {
     if (!enabled) return;
 
-    // Simple DevTools detection using window size differential
-    // When DevTools is docked, the viewport shrinks
     const checkDevTools = () => {
+      // Threshold for docked DevTools
       const widthThreshold = window.outerWidth - window.innerWidth > 160;
       const heightThreshold = window.outerHeight - window.innerHeight > 160;
-      if (widthThreshold || heightThreshold) {
-        onDevToolsDetected?.();
+      const isOpen = widthThreshold || heightThreshold;
+
+      if (isOpen) {
+        if (!isDevToolsOpenRef.current) {
+          isDevToolsOpenRef.current = true;
+          onDevToolsDetected?.();
+        }
+      } else {
+        if (isDevToolsOpenRef.current) {
+          isDevToolsOpenRef.current = false;
+          onDevToolsClosed?.();
+        }
       }
     };
 
-    devToolsCheckRef.current = setInterval(checkDevTools, 2000);
+    const intervalId = setInterval(checkDevTools, 1000);
+    window.addEventListener("resize", checkDevTools);
 
     return () => {
-      if (devToolsCheckRef.current) {
-        clearInterval(devToolsCheckRef.current);
-      }
+      clearInterval(intervalId);
+      window.removeEventListener("resize", checkDevTools);
     };
-  }, [enabled, onDevToolsDetected]);
+  }, [enabled, onDevToolsDetected, onDevToolsClosed]);
 
   // Attach all event listeners
   useEffect(() => {
     if (!enabled) return;
 
-    document.addEventListener("contextmenu", preventContextMenu);
-    document.addEventListener("keydown", blockDevToolsKeys);
+    document.addEventListener("contextmenu", preventContextMenu, true);
+    document.addEventListener("keydown", blockDevToolsKeys, true);
     document.addEventListener("dragstart", preventDrag);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      document.removeEventListener("contextmenu", preventContextMenu);
-      document.removeEventListener("keydown", blockDevToolsKeys);
+      document.removeEventListener("contextmenu", preventContextMenu, true);
+      document.removeEventListener("keydown", blockDevToolsKeys, true);
       document.removeEventListener("dragstart", preventDrag);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };

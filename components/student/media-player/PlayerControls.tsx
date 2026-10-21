@@ -74,20 +74,46 @@ function TheaterIcon({ size = 20 }: { size?: number }) {
   );
 }
 
-function SkipForwardIcon({ size = 20 }: { size?: number }) {
+function Rewind10Icon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="5 4 15 12 5 20 5 4" />
-      <line x1="19" y1="5" x2="19" y2="19" />
+      {/* Clockwise circle with arrow pointing right (rewind in RTL) */}
+      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+      <polyline points="21 3 21 8 16 8" />
+      <text
+        x="12"
+        y="15"
+        textAnchor="middle"
+        stroke="none"
+        fill="currentColor"
+        fontSize="7.5"
+        fontWeight="800"
+        fontFamily="system-ui, -apple-system, sans-serif"
+      >
+        10
+      </text>
     </svg>
   );
 }
 
-function SkipBackwardIcon({ size = 20 }: { size?: number }) {
+function Forward10Icon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="19 20 9 12 19 4 19 20" />
-      <line x1="5" y1="19" x2="5" y2="5" />
+      {/* Counter-clockwise circle with arrow pointing left (forward in RTL) */}
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <polyline points="3 3 3 8 8 8" />
+      <text
+        x="12"
+        y="15"
+        textAnchor="middle"
+        stroke="none"
+        fill="currentColor"
+        fontSize="7.5"
+        fontWeight="800"
+        fontFamily="system-ui, -apple-system, sans-serif"
+      >
+        10
+      </text>
     </svg>
   );
 }
@@ -135,6 +161,8 @@ export function PlayerControls({
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [isDraggingVolume, setIsDraggingVolume] = useState(false);
+  const volumeTrackRef = useRef<HTMLDivElement>(null);
   const speedMenuRef = useRef<HTMLDivElement>(null);
   const qualityMenuRef = useRef<HTMLDivElement>(null);
 
@@ -152,18 +180,68 @@ export function PlayerControls({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const VolumeIcon = state.isMuted || state.volume === 0
-    ? VolumeMuteIcon
-    : state.volume < 50
-      ? VolumeLowIcon
-      : VolumeHighIcon;
+  // Compute volume percentage from mouse event in RTL track
+  const getVolumeFromEvent = useCallback((e: MouseEvent | React.MouseEvent) => {
+    const track = volumeTrackRef.current;
+    if (!track) return 0;
+    const rect = track.getBoundingClientRect();
+    // RTL: right edge is 0% (next to speaker), left edge is 100% (full volume)
+    const x = rect.right - e.clientX;
+    return Math.max(0, Math.min(100, Math.round((x / rect.width) * 100)));
+  }, []);
+
+  const handleVolumeMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingVolume(true);
+      setShowVolumeSlider(true);
+      const newVol = getVolumeFromEvent(e);
+      onSetVolume(newVol);
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const vol = getVolumeFromEvent(moveEvent);
+        onSetVolume(vol);
+      };
+
+      const handleMouseUp = () => {
+        setIsDraggingVolume(false);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    },
+    [getVolumeFromEvent, onSetVolume]
+  );
+
+  const handleVolumeWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 5 : -5;
+      const current = state.isMuted ? 0 : state.volume;
+      const nextVol = Math.max(0, Math.min(100, current + delta));
+      onSetVolume(nextVol);
+    },
+    [state.isMuted, state.volume, onSetVolume]
+  );
+
+  const effectiveVolume = state.isMuted ? 0 : state.volume;
+
+  const VolumeIcon =
+    state.isMuted || state.volume === 0
+      ? VolumeMuteIcon
+      : state.volume < 50
+        ? VolumeLowIcon
+        : VolumeHighIcon;
 
   const controlBtnClass =
-    "flex items-center justify-center w-9 h-9 rounded-lg text-white/85 hover:text-white hover:bg-white/10 transition-all duration-150 active:scale-90";
+    "flex items-center justify-center w-9 h-9 rounded-lg text-white/85 hover:text-white hover:bg-white/10 transition-all duration-150 active:scale-90 cursor-pointer";
 
   return (
     <div
-      className="absolute bottom-0 inset-x-0 z-20 transition-opacity duration-300"
+      className="absolute bottom-0 inset-x-0 z-20 transition-opacity duration-300 select-none"
       style={{
         opacity: isVisible ? 1 : 0,
         pointerEvents: isVisible ? "auto" : "none",
@@ -185,74 +263,110 @@ export function PlayerControls({
         <div className="flex items-center justify-between gap-1">
           {/* Right side controls (RTL: these appear on the right) */}
           <div className="flex items-center gap-0.5">
-            {/* Play/Pause */}
-            <button
-              type="button"
-              onClick={onTogglePlay}
-              className={controlBtnClass}
-              aria-label={state.isPlaying ? "إيقاف" : "تشغيل"}
-            >
-              {state.isPlaying ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
-            </button>
-
-            {/* Skip Backward 10s */}
+            {/* Rewind 10s — on the right side towards 0:00 */}
             <button
               type="button"
               onClick={() => onSeekRelative(-10)}
               className={controlBtnClass}
-              aria-label="ترجيع 10 ثواني"
-              title="ترجيع 10 ثواني"
+              aria-label="ترجيع 10 ثوانٍ"
+              title="ترجيع 10 ثوانٍ (-10)"
             >
-              <SkipBackwardIcon size={17} />
+              <Rewind10Icon size={19} />
             </button>
 
-            {/* Skip Forward 10s */}
+            {/* Play/Pause — in center between rewind and forward */}
+            <button
+              type="button"
+              onClick={onTogglePlay}
+              className={`${controlBtnClass} w-9 h-9`}
+              aria-label={state.isPlaying ? "إيقاف مؤقت" : "تشغيل"}
+              title={state.isPlaying ? "إيقاف مؤقت (مسافة)" : "تشغيل (مسافة)"}
+            >
+              {state.isPlaying ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
+            </button>
+
+            {/* Forward 10s — to the left towards video duration */}
             <button
               type="button"
               onClick={() => onSeekRelative(10)}
               className={controlBtnClass}
-              aria-label="تقديم 10 ثواني"
-              title="تقديم 10 ثواني"
+              aria-label="تقديم 10 ثوانٍ"
+              title="تقديم 10 ثوانٍ (+10)"
             >
-              <SkipForwardIcon size={17} />
+              <Forward10Icon size={19} />
             </button>
 
             {/* Volume */}
             <div
               className="relative flex items-center"
               onMouseEnter={() => setShowVolumeSlider(true)}
-              onMouseLeave={() => setShowVolumeSlider(false)}
+              onMouseLeave={() => {
+                if (!isDraggingVolume) setShowVolumeSlider(false);
+              }}
             >
               <button
                 type="button"
                 onClick={onToggleMute}
                 className={controlBtnClass}
                 aria-label={state.isMuted ? "تشغيل الصوت" : "كتم الصوت"}
+                title={state.isMuted ? "تشغيل الصوت (M)" : "كتم الصوت (M)"}
               >
                 <VolumeIcon size={19} />
               </button>
 
-              {/* Volume slider — slides out on hover */}
+              {/* Custom Interactive Volume Slider */}
               <div
-                className="overflow-hidden transition-all duration-200 flex items-center"
+                className="overflow-hidden transition-all duration-200 flex items-center pr-1 pl-2"
                 style={{
-                  width: showVolumeSlider ? "80px" : "0px",
-                  opacity: showVolumeSlider ? 1 : 0,
+                  width: showVolumeSlider || isDraggingVolume ? "76px" : "0px",
+                  opacity: showVolumeSlider || isDraggingVolume ? 1 : 0,
+                  pointerEvents: showVolumeSlider || isDraggingVolume ? "auto" : "none",
                 }}
+                onWheel={handleVolumeWheel}
               >
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={state.isMuted ? 0 : state.volume}
-                  onChange={(e) => onSetVolume(Number(e.target.value))}
-                  className="w-full h-1 rounded-full appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to left, ${accentColor} ${state.isMuted ? 0 : state.volume}%, rgba(255,255,255,0.2) ${state.isMuted ? 0 : state.volume}%)`,
-                    direction: "ltr",
-                  }}
+                <div
+                  ref={volumeTrackRef}
+                  className="relative w-full h-4 cursor-pointer group flex items-center"
+                  onMouseDown={handleVolumeMouseDown}
+                  role="slider"
+                  aria-valuenow={effectiveVolume}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
                   aria-label="مستوى الصوت"
-                />
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    const current = effectiveVolume;
+                    if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                      e.preventDefault();
+                      onSetVolume(Math.min(100, current + 5));
+                    } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                      e.preventDefault();
+                      onSetVolume(Math.max(0, current - 5));
+                    }
+                  }}
+                >
+                  {/* Track background */}
+                  <div className="absolute inset-x-0 h-1.5 rounded-full bg-white/20" />
+
+                  {/* Filled track (RTL: fills from right to left) */}
+                  <div
+                    className="absolute right-0 h-1.5 rounded-full"
+                    style={{
+                      width: `${effectiveVolume}%`,
+                      backgroundColor: accentColor,
+                      transition: isDraggingVolume ? "none" : "width 0.1s ease",
+                    }}
+                  />
+
+                  {/* Thumb handle */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-md transition-transform group-hover:scale-110"
+                    style={{
+                      right: `calc(${effectiveVolume}% - 6px)`,
+                      transition: isDraggingVolume ? "none" : "right 0.1s ease, transform 0.15s ease",
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>

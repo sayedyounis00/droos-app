@@ -47,6 +47,7 @@ export function VideoPlayer({
   const [controlsVisible, setControlsVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isBlurred, setIsBlurred] = useState(false);
+  const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
   const [showBigPlay, setShowBigPlay] = useState(true);
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const CONTAINER_ID = "droos-yt-player";
@@ -111,10 +112,15 @@ export function VideoPlayer({
   // Security Guard
   useSecurityGuard({
     onDevToolsDetected: () => {
-      console.warn("[Droos Security] DevTools detected");
+      setIsDevToolsOpen(true);
+      controls.pause();
+    },
+    onDevToolsClosed: () => {
+      setIsDevToolsOpen(false);
     },
     onTabBlur: () => {
       setIsBlurred(true);
+      controls.pause();
     },
     onTabFocus: () => {
       setIsBlurred(false);
@@ -297,6 +303,45 @@ export function VideoPlayer({
             <p className="text-sm font-bold">عُد للتبويب لمتابعة المشاهدة</p>
             <p className="text-[11px] text-white/60">يتم إيقاف العرض مؤقتاً لحماية المحتوى</p>
           </div>
+        </div>
+      )}
+
+      {/* DevTools Security Overlay */}
+      {isDevToolsOpen && (
+        <div
+          className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center select-none"
+          style={{
+            backdropFilter: "blur(28px)",
+            WebkitBackdropFilter: "blur(28px)",
+            backgroundColor: "rgba(10, 15, 20, 0.94)",
+          }}
+        >
+          <div className="w-16 h-16 rounded-2xl bg-[#D9483D]/15 border border-[#D9483D]/30 flex items-center justify-center mb-4 text-[#D9483D] animate-pulse">
+            <svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <h3 className="text-base sm:text-lg font-black text-white mb-2">
+            تم رصد فتح أدوات الفحص (Inspect / DevTools)
+          </h3>
+          <p className="text-xs text-white/70 max-w-md leading-relaxed mb-5">
+            لحماية حقوق الملكية الفكرية وتأمين الدروس التعليمية، تم إيقاف المشغل وتعتيم المحتوى. يرجى إغلاق نافذة الفحص (Inspect) لمواصلة المشاهدة.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              const widthThreshold = window.outerWidth - window.innerWidth > 160;
+              const heightThreshold = window.outerHeight - window.innerHeight > 160;
+              if (!widthThreshold && !heightThreshold) {
+                setIsDevToolsOpen(false);
+              }
+            }}
+            className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-xs font-bold text-white transition-all border border-white/10 cursor-pointer"
+          >
+            إعادة التحقق واستئناف المشاهدة
+          </button>
         </div>
       )}
 
