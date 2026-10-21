@@ -11,7 +11,8 @@ interface LessonData {
   id: string;
   title: string;
   content_type: string;
-  video_url?: string | null;
+  /** Whether this lesson has a video — the actual URL stays on the server */
+  hasVideo: boolean;
   description?: string | null;
 }
 
@@ -140,7 +141,8 @@ export function PlayerLayout({
             <div className="space-y-6">
               {/* Video Player */}
               <VideoPlayer
-                videoUrl={lesson.video_url}
+                lessonId={lesson.id}
+                hasVideo={lesson.hasVideo}
                 lessonTitle={lesson.title}
                 accentColor={colors.accent || "#E8A83C"}
                 isTheaterMode={isTheaterMode}

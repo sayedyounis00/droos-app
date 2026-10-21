@@ -55,7 +55,9 @@ export default async function LessonPageRoute({
         id: lessonData.lesson.id,
         title: lessonData.lesson.title,
         content_type: lessonData.lesson.content_type || "video",
-        video_url: lessonData.lesson.video_url,
+        // SECURITY: Only send a boolean flag — never the actual URL
+        // The VideoPlayer will fetch the video ID from /api/lesson/[id]/video-url
+        hasVideo: !!lessonData.lesson.video_url,
         description: lessonData.lesson.description,
       }}
       playlist={(lessonData.playlist || []).map((l) => ({
@@ -63,7 +65,7 @@ export default async function LessonPageRoute({
         module_id: l.module_id,
         title: l.title,
         content_type: l.content_type || "video",
-        video_url: l.video_url,
+        // SECURITY: Don't send video_url in playlist — only needed for sidebar links
         sort_order: l.sort_order || 1,
       }))}
       courseTitle={courseTitle}

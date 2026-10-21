@@ -50,7 +50,7 @@ export interface PlaylistItem {
   module_id: string;
   title: string;
   content_type: string;
-  video_url?: string | null;
+  // SECURITY: video_url intentionally excluded — stays on server only
   sort_order: number;
 }
 

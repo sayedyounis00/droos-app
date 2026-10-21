@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import { useYouTubePlayer, extractYouTubeVideoId } from "./hooks/useYouTubePlayer";
+import { useYouTubePlayer } from "./hooks/useYouTubePlayer";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useSecurityGuard } from "./hooks/useSecurityGuard";
 import { PlayerControls } from "./PlayerControls";
@@ -10,7 +10,10 @@ import { PLAYBACK_RATES } from "./types";
 import type { PlayerCallbacks } from "./types";
 
 interface VideoPlayerProps {
-  videoUrl?: string | null;
+  /** Lesson ID — used to fetch video securely from API (never expose URL to client) */
+  lessonId: string;
+  /** Whether this lesson has a video (so we know to fetch or show placeholder) */
+  hasVideo: boolean;
   lessonTitle: string;
   /** Watermark student identity (Phase 2 will use real data) */
   studentName?: string;
@@ -28,7 +31,8 @@ interface VideoPlayerProps {
 }
 
 export function VideoPlayer({
-  videoUrl,
+  lessonId,
+  hasVideo,
   lessonTitle,
   studentName = "طالب تجريبي",
   studentCode = "T3ST",
@@ -47,7 +51,44 @@ export function VideoPlayer({
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const CONTAINER_ID = "droos-yt-player";
 
-  const videoId = extractYouTubeVideoId(videoUrl);
+  // ── Secure video ID fetching ──
+  // Never receive the URL from the server component.
+  // Instead, fetch only the video ID from a protected API route.
+  const [videoId, setVideoId] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState(false);
+  const [isFetchingVideo, setIsFetchingVideo] = useState(false);
+
+  useEffect(() => {
+    if (!hasVideo || !lessonId) {
+      setVideoId(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsFetchingVideo(true);
+    setFetchError(false);
+
+    fetch(`/api/lesson/${lessonId}/video-url`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch video");
+        return res.json();
+      })
+      .then((data) => {
+        if (!cancelled && data.videoId) {
+          setVideoId(data.videoId);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setFetchError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setIsFetchingVideo(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lessonId, hasVideo]);
 
   // YouTube Player Hook
   const callbacks: PlayerCallbacks = {
@@ -70,7 +111,6 @@ export function VideoPlayer({
   // Security Guard
   useSecurityGuard({
     onDevToolsDetected: () => {
-      // In Phase 1 we just log — Phase 2 will pause and warn
       console.warn("[Droos Security] DevTools detected");
     },
     onTabBlur: () => {
@@ -160,8 +200,8 @@ export function VideoPlayer({
     toggleFullscreen();
   }, [toggleFullscreen]);
 
-  // No video URL state
-  if (!videoId) {
+  // ── No video / placeholder state ──
+  if (!hasVideo) {
     return (
       <div
         className="relative aspect-video w-full rounded-2xl overflow-hidden bg-[#0D1420] flex flex-col items-center justify-center text-center p-6 text-white"
@@ -176,6 +216,35 @@ export function VideoPlayer({
         <p className="text-xs text-white/70 max-w-sm mt-1">
           هذا الدرس مسجل كحصة دراسية أو ملف تمارين. يمكنك مراجعة الملاحظات والملحقات أدناه.
         </p>
+      </div>
+    );
+  }
+
+  // ── Fetch error state ──
+  if (fetchError) {
+    return (
+      <div
+        className="relative aspect-video w-full rounded-2xl overflow-hidden bg-[#0D1420] flex flex-col items-center justify-center text-center p-6 text-white"
+        data-player-area
+      >
+        <div className="w-16 h-16 rounded-full bg-[#D9483D]/20 flex items-center justify-center mb-3">
+          <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#D9483D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+        </div>
+        <h4 className="text-base font-bold">تعذّر تحميل الفيديو</h4>
+        <p className="text-xs text-white/60 max-w-sm mt-1">
+          يرجى التأكد من اتصالك بالإنترنت والمحاولة مرة أخرى
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 text-xs font-bold rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+        >
+          إعادة المحاولة
+        </button>
       </div>
     );
   }
@@ -255,7 +324,7 @@ export function VideoPlayer({
       )}
 
       {/* Loading spinner */}
-      {(state.isBuffering || (!isReady && videoId)) && (
+      {(state.isBuffering || isFetchingVideo || (!isReady && videoId)) && (
         <div className="absolute inset-0 z-12 flex items-center justify-center bg-black/30">
           <div
             className="w-10 h-10 border-3 border-t-transparent rounded-full animate-spin"
