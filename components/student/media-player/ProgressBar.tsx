@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useRef, useCallback, useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
+import { useRtlDragSlider } from "./hooks/useRtlDragSlider";
+import { formatTime } from "./utils/formatTime";
 
 interface ProgressBarProps {
   currentTime: number;
@@ -11,8 +13,7 @@ interface ProgressBarProps {
 }
 
 /**
- * Custom interactive progress/seek bar for the video player.
- * Shows buffered region, current progress, and supports click + drag to seek.
+ * Interactive seek bar for video playback with RTL orientation.
  */
 export function ProgressBar({
   currentTime,
@@ -21,84 +22,20 @@ export function ProgressBar({
   onSeek,
   accentColor = "#E8A83C",
 }: ProgressBarProps) {
-  const barRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [hoverPercent, setHoverPercent] = useState<number | null>(null);
+
+  const handleSeekPercent = useCallback(
+    (percent: number) => {
+      onSeek((percent / 100) * duration);
+    },
+    [duration, onSeek]
+  );
+
+  const { trackRef, isDragging, handleMouseDown, getPercentFromEvent } =
+    useRtlDragSlider({ onValueChange: handleSeekPercent });
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const buffered = loadedFraction * 100;
-
-  const getPercentFromEvent = useCallback(
-    (e: React.MouseEvent | MouseEvent) => {
-      const bar = barRef.current;
-      if (!bar) return 0;
-      const rect = bar.getBoundingClientRect();
-      // RTL: right is start, left is end
-      const x = rect.right - e.clientX;
-      return Math.max(0, Math.min(100, (x / rect.width) * 100));
-    },
-    []
-  );
-
-  const dragCleanupRef = useRef<(() => void) | null>(null);
-
-  // Clean up any lingering listeners if unmounted while dragging
-  useEffect(() => {
-    return () => {
-      dragCleanupRef.current?.();
-    };
-  }, []);
-
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      setIsDragging(true);
-      const percent = getPercentFromEvent(e);
-      onSeek((percent / 100) * duration);
-
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        const p = getPercentFromEvent(moveEvent);
-        onSeek((p / 100) * duration);
-      };
-
-      const handleMouseUp = () => {
-        setIsDragging(false);
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-        dragCleanupRef.current = null;
-      };
-
-      dragCleanupRef.current = () => {
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-      };
-
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-    },
-    [duration, getPercentFromEvent, onSeek]
-  );
-
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      setHoverPercent(getPercentFromEvent(e));
-    },
-    [getPercentFromEvent]
-  );
-
-  const handleMouseLeave = useCallback(() => {
-    setHoverPercent(null);
-  }, []);
-
-  const formatTime = (seconds: number): string => {
-    if (!isFinite(seconds) || seconds < 0) return "0:00";
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
-
   const hoverTime = hoverPercent !== null ? (hoverPercent / 100) * duration : null;
 
   return (
@@ -109,14 +46,14 @@ export function ProgressBar({
         <span>{formatTime(duration)}</span>
       </div>
 
-      {/* Progress bar track */}
+      {/* Track */}
       <div
-        ref={barRef}
+        ref={trackRef}
         className="relative w-full group cursor-pointer"
         style={{ height: isDragging ? "8px" : "5px", transition: "height 0.15s ease" }}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        onMouseMove={(e) => setHoverPercent(getPercentFromEvent(e))}
+        onMouseLeave={() => setHoverPercent(null)}
         role="slider"
         aria-valuenow={Math.round(currentTime)}
         aria-valuemin={0}
@@ -124,23 +61,15 @@ export function ProgressBar({
         aria-label="شريط التقدم"
         tabIndex={0}
       >
-        {/* Background track */}
-        <div
-          className="absolute inset-0 rounded-full"
-          style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-        />
+        <div className="absolute inset-0 rounded-full bg-white/15" />
 
         {/* Buffered region */}
         <div
-          className="absolute top-0 bottom-0 rounded-full"
-          style={{
-            right: 0,
-            width: `${buffered}%`,
-            backgroundColor: "rgba(255,255,255,0.25)",
-          }}
+          className="absolute top-0 bottom-0 rounded-full bg-white/25"
+          style={{ right: 0, width: `${buffered}%` }}
         />
 
-        {/* Progress (played region) */}
+        {/* Progress played */}
         <div
           className="absolute top-0 bottom-0 rounded-full"
           style={{
@@ -164,13 +93,11 @@ export function ProgressBar({
           }}
         />
 
-        {/* Hover tooltip */}
+        {/* Hover preview tooltip */}
         {hoverPercent !== null && hoverTime !== null && (
           <div
             className="absolute -top-8 px-1.5 py-0.5 rounded-md bg-black/80 text-white text-[10px] font-bold whitespace-nowrap pointer-events-none"
-            style={{
-              right: `calc(${hoverPercent}% - 16px)`,
-            }}
+            style={{ right: `calc(${hoverPercent}% - 16px)` }}
           >
             {formatTime(hoverTime)}
           </div>

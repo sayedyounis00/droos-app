@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React from "react";
+import { useWatermarkPosition } from "./hooks/useWatermarkPosition";
 
 interface WatermarkProps {
   studentName: string;
@@ -10,8 +11,8 @@ interface WatermarkProps {
 }
 
 /**
- * Dynamic watermark that floats over the video area.
- * Moves randomly every N seconds to make screen recording traceable.
+ * Dynamic floating watermark rendered across the video frame.
+ * Randomly repositions over time to deter screen recording and leak sources.
  */
 export function Watermark({
   studentName,
@@ -19,29 +20,11 @@ export function Watermark({
   opacity = 0.12,
   intervalMs = 25000,
 }: WatermarkProps) {
-  const [position, setPosition] = useState(() => ({
-    x: 10 + Math.random() * 75,
-    y: 10 + Math.random() * 70,
-  }));
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const randomizePosition = useCallback(() => {
-    // Keep within 10-85% range to avoid clipping at edges
-    const x = 10 + Math.random() * 75;
-    const y = 10 + Math.random() * 70;
-    setPosition({ x, y });
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(randomizePosition, intervalMs);
-    return () => clearInterval(interval);
-  }, [intervalMs, randomizePosition]);
-
+  const position = useWatermarkPosition(intervalMs);
   const text = `${studentName} • ${studentCode}`;
 
   return (
     <div
-      ref={containerRef}
       data-watermark
       style={{
         position: "absolute",
@@ -53,7 +36,7 @@ export function Watermark({
         WebkitUserSelect: "none",
       }}
     >
-      {/* Primary watermark — moves randomly */}
+      {/* Primary dynamic watermark */}
       <span
         style={{
           position: "absolute",
@@ -68,13 +51,12 @@ export function Watermark({
           transform: "rotate(-8deg)",
           transition: "top 2s ease-in-out, right 2s ease-in-out",
           textShadow: "0 1px 3px rgba(0,0,0,0.3)",
-          fontFamily: "inherit",
         }}
       >
         {text}
       </span>
 
-      {/* Secondary watermark — subtle tiled pattern */}
+      {/* Secondary subtle anchor watermark */}
       <span
         style={{
           position: "absolute",
@@ -87,10 +69,9 @@ export function Watermark({
           whiteSpace: "nowrap",
           transform: "rotate(5deg)",
           transition: "bottom 2s ease-in-out, left 2s ease-in-out",
-          fontFamily: "inherit",
         }}
       >
-        {studentCode}
+        {text}
       </span>
     </div>
   );
