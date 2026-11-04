@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📚 Droos App (منصة دروس التعليمية)
 
-## Getting Started
+A modern, full-stack educational management platform and interactive teacher dashboard designed for educators and students. Built with **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4**, and **Supabase** (Postgres + Auth + SSR).
 
-First, run the development server:
+---
+
+## 🌟 Key Highlights & Architecture
+
+- **Teacher Management Studio**: Unified interface for educators to organize educational stages (المراحل الدراسية), grade levels (الصفوف الدراسية), courses (الدورات والكورسات), chapters/units (الدروس / Modules), and interactive sessions (الحصص / Lessons).
+- **Interactive Droos Table Manager**: Drag-and-drop hierarchy management, filter chips by grade/stage, batch actions, and realtime status tracking.
+- **Dynamic Homepage & Theme Builder**: Customizable landing page sections for teachers and academies to showcase featured courses, statistics, testimonials, and FAQs.
+- **Secure Multi-Role Authentication**: Role-based access control (RBAC) via Supabase Auth with Row Level Security (RLS) policies.
+- **High-Performance Architecture**: Zero-bloat Next.js 16 App Router setup, React 19 Server Components, and Tailwind CSS v4 styling.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Framework** | Next.js 16 (App Router), React 19 |
+| **Language** | TypeScript 5 |
+| **Styling** | Tailwind CSS v4, PostCSS |
+| **Backend & DB** | Supabase (PostgreSQL, Row Level Security) |
+| **Auth & Client** | `@supabase/ssr`, `@supabase/supabase-js` |
+| **Icons & UI** | Lucide React, Heroicons, Custom SVG Components |
+
+---
+
+## 📂 Project Structure
+
+```text
+droos-app/
+├── app/
+│   ├── api/                   # Server API endpoints
+│   ├── teacher/               # Teacher control panel & Droos table management
+│   ├── teacher_login/         # Educator portal authentication
+│   ├── layout.tsx             # Root application layout & font configurations
+│   ├── page.tsx               # High-converting landing page
+│   └── globals.css            # Global CSS with Tailwind v4 setup
+├── components/
+│   ├── landing/               # Hero, About, AudiencePaths, FeaturesGrid, FAQs, Footer
+│   └── teacher/               # DroosTableManager, GradeLevelFilterChips, HomePageBuilder
+├── lib/                       # Supabase client helpers (browser/server/middleware)
+├── supabase/
+│   └── migrations/            # Database schemas, RLS policies, seed scripts
+└── feature-md-files/          # Architectural documentation & agent guidelines
+```
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/sayedyounis00/droos-app.git
+cd droos-app
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Environment Configuration
+
+Create a `.env.local` file in the root directory:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+### 4. Database Setup
+
+Apply the migrations located in `supabase/migrations/` to your Supabase project:
+- `20260908_droos_table.sql`: Tables for `educational_stages`, `grade_levels`, `courses`, `modules`, and `lessons`.
+- `20260908_teachers.sql`: Profiles, permissions, and teacher metadata.
+
+### 5. Run the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📖 Database Schema Hierarchy
 
-## Learn More
+```text
+Educational Stage (المرحلة الدراسية)
+  └── Grade Level (الصف الدراسي)
+        └── Course (الكورس / الدورة)
+              └── Module / Chapter (الدرس)
+                    └── Lesson / Session (الحصة)
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🤝 Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Contributions, issues, and feature requests are welcome! Feel free to check the issues tab or submit a pull request.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📄 License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is licensed under the MIT License.
