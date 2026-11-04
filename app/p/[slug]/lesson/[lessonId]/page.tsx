@@ -4,7 +4,7 @@ import {
   getPublicLesson,
 } from "@/lib/queries/public-platform";
 import { PLATFORM_THEMES } from "@/lib/themes";
-import { StudentLessonPlayer } from "@/components/student/StudentLessonPlayer";
+import { PlayerLayout } from "@/components/student/media-player/PlayerLayout";
 
 interface LessonPageRouteProps {
   params: Promise<{ slug: string; lessonId: string }>;
@@ -46,16 +46,27 @@ export default async function LessonPageRoute({
     PLATFORM_THEMES[platformData.themeId] || PLATFORM_THEMES["horizon"];
 
   // Module and course titles
-  const moduleTitle = (lessonData.lesson as any).modules?.title;
-  const courseTitle = (lessonData.lesson as any).modules?.courses?.title;
+  interface LessonWithRelations {
+    modules?: {
+      title?: string;
+      courses?: {
+        title?: string;
+      };
+    };
+  }
+  const lessonWithRelations = lessonData.lesson as unknown as LessonWithRelations;
+  const moduleTitle = lessonWithRelations.modules?.title;
+  const courseTitle = lessonWithRelations.modules?.courses?.title;
 
   return (
-    <StudentLessonPlayer
+    <PlayerLayout
       lesson={{
         id: lessonData.lesson.id,
         title: lessonData.lesson.title,
         content_type: lessonData.lesson.content_type || "video",
-        video_url: lessonData.lesson.video_url,
+        // SECURITY: Only send a boolean flag — never the actual URL
+        // The VideoPlayer will fetch the video ID from /api/lesson/[id]/video-url
+        hasVideo: !!lessonData.lesson.video_url,
         description: lessonData.lesson.description,
       }}
       playlist={(lessonData.playlist || []).map((l) => ({
@@ -63,7 +74,7 @@ export default async function LessonPageRoute({
         module_id: l.module_id,
         title: l.title,
         content_type: l.content_type || "video",
-        video_url: l.video_url,
+        // SECURITY: Don't send video_url in playlist — only needed for sidebar links
         sort_order: l.sort_order || 1,
       }))}
       courseTitle={courseTitle}
